@@ -139,37 +139,6 @@ export default function RootLayout({
                 </Link>
               </div>
 
-              {/* LiveInternet counter */}
-              <Script
-                id="liveinternet"
-                strategy="afterInteractive"
-                dangerouslySetInnerHTML={{
-                  __html: `
-                    (function () {
-                      var d = document;
-                      var a = d.createElement('a');
-                      a.href = '//www.liveinternet.ru/click';
-                      a.target = '_blank';
-
-                      var img = d.createElement('img');
-                      img.src = '//counter.yadro.ru/hit?t14.6;r' +
-                        encodeURIComponent(d.referrer) +
-                        (screen ? ';s' + screen.width + '*' + screen.height + '*' +
-                        (screen.colorDepth || screen.pixelDepth) : '') +
-                        ';u' + encodeURIComponent(d.URL) +
-                        ';' + Math.random();
-
-                      img.width = 88;
-                      img.height = 31;
-                      img.border = 0;
-                      img.alt = 'LiveInternet';
-
-                      a.appendChild(img);
-                      d.currentScript.parentNode.appendChild(a);
-                    })();
-                  `,
-                }}
-              />
             </footer>
           </div>
 
