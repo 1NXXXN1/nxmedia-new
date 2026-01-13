@@ -75,7 +75,7 @@ function CatalogContent() {
         page: 1,
       });
       setFilms(result.items || []);
-      setHasMore((result.items || []).length >= 20);
+      setHasMore((result.items || []).length >= 24);
     } catch (e) {
       console.error('Loading films failed:', e);
       setFilms([]);
@@ -127,7 +127,7 @@ function CatalogContent() {
       
       setFilms([...films, ...newFilms]);
       setPage(nextPage);
-      setHasMore(newFilms.length >= 20);
+      setHasMore(newFilms.length >= 24);
     } catch (e) {
       console.error('Loading more failed:', e);
       setHasMore(false);
