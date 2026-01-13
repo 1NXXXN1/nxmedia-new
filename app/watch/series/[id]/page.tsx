@@ -63,57 +63,45 @@ export default function WatchSeriesPage() {
 
   useEffect(() => {
     async function loadFilmAndActors() {
-      console.log(`[Watch Series] Loading series with TMDB ID: ${id}`);
+      setLoading(true);
       try {
-        // 1) Fetch TMDB details
-        console.log('[Watch Series] Fetching TMDB details...');
-        const tmdbData = await fetchFilmDetails(Number(id), 'tv');
+        // Fetch all data in parallel
+        const [tmdbData, kpResult, staffData] = await Promise.all([
+          fetchFilmDetails(Number(id), 'tv'),
+          getKinopoiskIdFromTmdb(Number(id), 'tv'),
+          fetchFilmStaff(Number(id), 'tv'),
+        ]);
+
         if (!tmdbData) {
-          console.error('[Watch Series] No series data found for ID:', id);
           setLoading(false);
           return;
         }
-
         setFilm(tmdbData);
-        console.log('[Watch Series] Series data set:', tmdbData.nameRu || tmdbData.nameEn);
 
-        // 2) Convert to Kinopoisk ID (for iframe)
-        console.log('[Watch Series] Requesting Kinopoisk ID...');
-        const kpResult = await getKinopoiskIdFromTmdb(Number(id), 'tv');
-        console.log(`[Watch Series] Received KP: ID=${kpResult.id}, Type=${kpResult.type}`);
-
-        if (kpResult.id && kpResult.id !== String(id)) {
-          console.log(`[Watch Series] ✓ Valid Kinopoisk ID found: ${kpResult.id}`);
+        if (kpResult?.id && kpResult.id !== String(id)) {
           setKinopoiskId(kpResult.id);
           setPlayerError('');
         } else {
-          console.warn(`[Watch Series] ✗ Kinopoisk ID not found (got ${kpResult.id} for TMDB ${id})`);
           setPlayerError('Видеоплеер временно недоступен для этого контента');
         }
 
-        // 3) Load actors
-        console.log('[Watch Series] Loading actors...');
-        const staffData = await fetchFilmStaff(Number(id), 'tv');
         if (staffData?.items) {
           const actorsList = staffData.items.filter((person: any) => person.professionKey === 'ACTOR').slice(0, 10);
-          console.log(`[Watch Series] Loaded ${actorsList.length} actors`);
           setActors(actorsList || []);
         }
       } catch (e) {
-        console.error('[Watch Series] Error loading series:', e);
+        // eslint-disable-next-line no-console
+        //console.error('[Watch Series] Error loading series:', e);
       } finally {
         setLoading(false);
-        console.log('[Watch Series] Loading complete');
       }
     }
 
     if (id) {
-      console.log(`[Watch Series] Series ID changed to: ${id}, resetting state...`);
       setKinopoiskId('');
       setIframeLoaded(false);
       setPlayerError('');
       setLoading(true);
-      
       loadFilmAndActors();
       checkFavorite(id);
 
@@ -121,18 +109,17 @@ export default function WatchSeriesPage() {
         checkFavorite(id);
       };
       window.addEventListener('storage', handleStorageChange);
-      
       return () => window.removeEventListener('storage', handleStorageChange);
     }
   }, [id]);
 
   // Load iframe with obfuscated URL
   useEffect(() => {
-    if (!kinopoiskId || loading || !film) {
+    if (!user || !kinopoiskId || loading || !film) {
       return;
     }
     
-    console.log(`[Watch Series] Creating iframe for Kinopoisk ID: ${kinopoiskId}`);
+    //console.log(`[Watch Series] Creating iframe for Kinopoisk ID: ${kinopoiskId}`);
     
     const container = document.getElementById('player-container');
     if (!container) {
@@ -152,16 +139,16 @@ export default function WatchSeriesPage() {
     frame.referrerPolicy = 'no-referrer';
     
     frame.onload = () => {
-      console.log('[Watch Series] Iframe loaded successfully');
+      //console.log('[Watch Series] Iframe loaded successfully');
       setIframeLoaded(true);
     };
     
     frame.onerror = (e) => {
-      console.error('[Watch Series] Iframe load error:', e);
+      //console.error('[Watch Series] Iframe load error:', e);
     };
     
     container.appendChild(frame);
-  }, [kinopoiskId, loading, film]);
+  }, [kinopoiskId, loading, film, user]);
 
   const toggleFavorite = (e?: React.MouseEvent) => {
     if (e) {
@@ -226,20 +213,22 @@ export default function WatchSeriesPage() {
           )}
           
           {/* Heart Button Overlay */}
-          <motion.button
-            onClick={toggleFavorite}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm z-10"
-          >
-            <motion.span
-              animate={isFav ? { scale: [1, 1.3, 1] } : {}}
-              transition={{ duration: 0.3 }}
-              className={`text-2xl block transition-colors ${isFav ? 'text-red-500' : 'text-gray-300'}`}
+          {user && (
+            <motion.button
+              onClick={toggleFavorite}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm z-10"
             >
-              ♥
-            </motion.span>
-          </motion.button>
+              <motion.span
+                animate={isFav ? { scale: [1, 1.3, 1] } : {}}
+                transition={{ duration: 0.3 }}
+                className={`text-2xl block transition-colors ${isFav ? 'text-red-500' : 'text-gray-300'}`}
+              >
+                ♥
+              </motion.span>
+            </motion.button>
+          )}
         </div>
 
         {/* Info and Description */}
@@ -345,7 +334,18 @@ export default function WatchSeriesPage() {
           id="player-container" 
           className="relative w-full aspect-video rounded-2xl overflow-hidden bg-black"
         >
-          {playerError ? (
+          {!user ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center bg-gradient-to-br from-gray-900 to-black">
+              <svg className="w-20 h-20 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <div className="text-white text-xl font-semibold">Войдите с учётной записью</div>
+              <div className="text-gray-400 text-sm max-w-md">Для просмотра контента необходимо авторизоваться</div>
+              <Link href="/login" className="mt-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
+                Войти
+              </Link>
+            </div>
+          ) : playerError ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
               <svg className="w-16 h-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />

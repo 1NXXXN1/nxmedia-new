@@ -38,7 +38,6 @@ export default function FilmCard({
 
   return (
     <motion.div
-      whileHover={{ scale: 1.05, y: -5 }}
       className="group cursor-pointer relative"
     >
       <Link href={watchUrl as any} className="block">

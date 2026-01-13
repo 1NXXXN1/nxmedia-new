@@ -171,7 +171,7 @@ export default function Home() {
         priority={idx < 3}
         onFavoriteClick={toggleFavorite}
         isFavorite={isFav}
-        showFavoriteButton={true}
+        showFavoriteButton={!!user}
       />
     );
   };
@@ -193,8 +193,8 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">🎬 Популярные Фильмы</h2>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {films.slice(0, 12).map((film, i) => (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+            {films.slice(0, 14).map((film, i) => (
               <FilmCardWithFavorite key={film.kinopoiskId} film={film} idx={i} />
             ))}
           </div>
@@ -206,8 +206,8 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">📺 Популярные Сериалы</h2>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {series.slice(0, 12).map((s, i) => (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+            {series.slice(0, 14).map((s, i) => (
               <FilmCardWithFavorite key={s.kinopoiskId} film={s} idx={i} />
             ))}
           </div>

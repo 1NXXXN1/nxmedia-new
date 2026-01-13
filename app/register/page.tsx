@@ -24,25 +24,25 @@ export default function RegisterPage() {
     setSuccess(false);
 
     if (password !== confirmPassword) {
-      setError('Parollar mos kelmadi');
+      setError('Пароли не совпадают');
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError('Parol kamida 6 ta belgidan iborat bo\'lishi kerak');
+      setError('Пароль должен содержать минимум 6 символов');
       setLoading(false);
       return;
     }
 
     if (!displayName.trim()) {
-      setError('Ism kiritilishi shart');
+      setError('Имя обязательно для заполнения');
       setLoading(false);
       return;
     }
 
     if (!supabase) {
-      setError('Supabase sozlanmagan. .env.local faylini tekshiring.');
+      setError('Supabase не настроен. Проверьте файл .env.local.');
       setLoading(false);
       return;
     }
@@ -68,7 +68,7 @@ export default function RegisterPage() {
         setError('');
         setSuccess(false);
         setTimeout(() => {
-          alert('Email manzilingizga tasdiqlash havolasi yuborildi. Emailingizni tekshiring.');
+          alert('Ссылка для подтверждения отправлена на ваш email. Проверьте почту.');
           router.push('/login');
         }, 1000);
       } else {
@@ -79,11 +79,11 @@ export default function RegisterPage() {
         }, 1500);
       }
     } catch (error: any) {
-      const errorMsg = error.message || 'Ro\'yxatdan o\'tishda xatolik';
+      const errorMsg = error.message || 'Ошибка регистрации';
       
       // Better error messages
       if (errorMsg.includes('already registered')) {
-        setError('Bu email allaqachon ro\'yxatdan o\'tgan');
+        setError('Этот email уже зарегистрирован');
       } else {
         setError(errorMsg);
       }
@@ -99,8 +99,8 @@ export default function RegisterPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl">
         <div className="bg-gray-800/60 backdrop-blur-md rounded-xl p-6 border border-gray-700/50 shadow-2xl">
-          <h1 className="text-2xl font-bold mb-1 text-center">Ro'yxatdan o'tish</h1>
-          <p className="text-gray-400 text-center mb-6 text-sm">Yangi hisob yarating</p>
+          <h1 className="text-2xl font-bold mb-1 text-center">Регистрация</h1>
+          <p className="text-gray-400 text-center mb-6 text-sm">Создайте новый аккаунт</p>
 
           {error && (
             <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
@@ -110,20 +110,20 @@ export default function RegisterPage() {
 
           {success && (
             <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 text-sm">
-              Muvaffaqiyatli ro'yxatdan o'tdingiz! Login sahifasiga yo'naltirish...
+              Вы успешно зарегистрировались! Перенаправление на страницу входа...
             </div>
           )}
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Ism</label>
+              <label className="block text-sm font-medium mb-2">Имя</label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                placeholder="Ismingizni kiriting"
+                placeholder="Введите ваше имя"
               />
             </div>
 
@@ -140,7 +140,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Parol</label>
+              <label className="block text-sm font-medium mb-2">Пароль</label>
               <input
                 type="password"
                 value={password}
@@ -148,12 +148,12 @@ export default function RegisterPage() {
                 required
                 minLength={6}
                 className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                placeholder="Kamida 6 ta belgi"
+                placeholder="Минимум 6 символов"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Parolni tasdiqlash</label>
+              <label className="block text-sm font-medium mb-2">Подтвердите пароль</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -161,7 +161,7 @@ export default function RegisterPage() {
                 required
                 minLength={6}
                 className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                placeholder="Parolni takrorlang"
+                placeholder="Повторите пароль"
               />
             </div>
 
@@ -172,22 +172,22 @@ export default function RegisterPage() {
               whileTap={{ scale: 0.98 }}
               className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-semibold transition"
             >
-              {loading ? 'Ro\'yxatdan o\'tish...' : 'Ro\'yxatdan o\'tish'}
+              {loading ? 'Регистрация...' : 'Зарегистрироваться'}
             </motion.button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm">
-              Hisobingiz bormi?{' '}
+              Уже есть аккаунт?{' '}
               <Link href="/login" className="text-blue-400 hover:text-blue-300 font-semibold">
-                Kirish
+                Войти
               </Link>
             </p>
           </div>
 
           <div className="mt-4 text-center">
             <Link href="/" className="text-gray-500 hover:text-gray-400 text-sm">
-              Asosiy sahifaga qaytish
+              Вернуться на главную
             </Link>
           </div>
         </div>

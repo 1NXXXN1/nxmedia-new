@@ -4,7 +4,7 @@ import SearchBar from './search/SearchBar';
 import Logo from '@/components/Logo';
 import VisitorCounter from '@/components/VisitorCounter';
 import ScrollToTop from '@/components/ScrollToTop';
-import ClientProviders, { UserMenu } from '@/components/ClientProviders';
+import ClientProviders, { UserMenu, FavoritesLink } from '@/components/ClientProviders';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,14 +79,42 @@ export default function RootLayout({
         
         {/* HEADER — FULL WIDTH */}
         <header
-          className="sticky top-0 z-50 w-full
+          className="fixed top-0 left-0 w-full z-50
                      border-b border-white/5
                      bg-[#0b0b0f]/80 backdrop-blur"
         >
-          <div
-            className="mx-auto max-w-7xl px-4 py-3
-                       grid grid-cols-3 items-center gap-4"
-          >
+          {/* Mobile: Stacked layout */}
+          <div className="block md:hidden px-4 py-3 space-y-3">
+            {/* Logo and Menu row */}
+            <div className="flex items-center justify-between">
+              <Link href="/">
+                <Logo />
+              </Link>
+              <nav className="flex gap-2 items-center">
+                <Link
+                  href="/catalog"
+                  className="rounded-lg px-4 py-1.5 text-sm font-medium
+                             bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30
+                             text-blue-200 hover:text-blue-100
+                             border border-blue-500/30 hover:border-blue-500/50
+                             transition-all duration-200 whitespace-nowrap
+                             flex items-center gap-1"
+                >
+                  <span>📚</span>
+                  Каталог
+                </Link>
+                <FavoritesLink />
+                <UserMenu />
+              </nav>
+            </div>
+            {/* Search full width */}
+            <div className="w-full">
+              <SearchBar />
+            </div>
+          </div>
+
+          {/* Desktop: Grid layout */}
+          <div className="hidden md:grid md:grid-cols-3 md:items-center md:gap-4 mx-auto max-w-7xl px-4 py-3">
             {/* Logo */}
             <div className="justify-self-start">
               <Link href="/">
@@ -103,27 +131,24 @@ export default function RootLayout({
             <nav className="justify-self-end flex gap-4 items-center">
               <Link
                 href="/catalog"
-                className="rounded-lg px-3 text-sm
-                           text-gray-300 hover:bg-white/5
-                           transition-colors"
+                className="rounded-lg px-4 py-1.5 text-sm font-medium
+                           bg-gradient-to-r from-blue-500/20 to-purple-500/20 hover:from-blue-500/30 hover:to-purple-500/30
+                           text-blue-200 hover:text-blue-100
+                           border border-blue-500/30 hover:border-blue-500/50
+                           transition-all duration-200
+                           flex items-center gap-2"
               >
+                <span>📚</span>
                 Каталог
               </Link>
-              <Link
-                href="/favorites"
-                className="rounded-lg px-3 py-1.5 text-sm
-                           text-gray-300 hover:bg-white/5
-                           transition-colors"
-              >
-                Избранное
-              </Link>
+              <FavoritesLink />
               <UserMenu />
             </nav>
           </div>
         </header>
 
         {/* PAGE CONTENT — LIMITED WIDTH */}
-        <div className="relative z-10 mx-auto max-w-[1600px] px-4 flex-grow flex flex-col">
+        <div className="relative z-10 mx-auto max-w-[1600px] px-4 flex-grow flex flex-col pt-[70px] md:pt-[76px]">
           <main className="py-6 flex-grow">
             {children}
           </main>
@@ -142,6 +167,18 @@ export default function RootLayout({
                 NX
               </Link>
             </div>
+            <div dangerouslySetInnerHTML={{ __html: `
+              <!--LiveInternet counter-->
+              <script type="text/javascript">
+                document.write('<a href="//www.liveinternet.ru/click" target="_blank"><img src="//counter.yadro.ru/hit?t14.6;r' +
+                escape(document.referrer) + ((typeof(screen)=='undefined')?'':'
+                + ';s' + screen.width + '*' + screen.height + '*' + (screen.colorDepth?
+                screen.colorDepth:screen.pixelDepth)) + ';u' + escape(document.URL) +
+                ';' + Math.random() +
+                '" border="0" width="88" height="31" alt="LiveInternet" /></a>');
+              </script>
+              <!--/LiveInternet-->
+            ` }} />
           </footer>
         </div>
         </ClientProviders>

@@ -26,7 +26,7 @@ export default function UserMenu() {
         href="/login"
         className="rounded-lg px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 transition-colors font-semibold"
       >
-        Kirish
+        Войти
       </Link>
     );
   }

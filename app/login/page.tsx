@@ -20,7 +20,7 @@ export default function LoginPage() {
     setError('');
 
     if (!supabase) {
-      setError('Supabase sozlanmagan. .env.local faylini tekshiring.');
+      setError('Supabase не настроен. Проверьте файл .env.local.');
       setLoading(false);
       return;
     }
@@ -37,15 +37,15 @@ export default function LoginPage() {
       router.push('/');
       router.refresh();
     } catch (error: any) {
-      const errorMsg = error.message || 'Kirish xatolik';
+      const errorMsg = error.message || 'Ошибка входа';
       
-      // Better error messages in Uzbek
+      // Better error messages in Russian
       if (errorMsg.includes('Invalid login credentials')) {
-        setError('Email yoki parol noto\'g\'ri');
+        setError('Неверный email или пароль');
       } else if (errorMsg.includes('Email not confirmed')) {
-        setError('Email tasdiqlanmagan. Emailingizni tekshiring.');
+        setError('Email не подтвержден. Проверьте почту.');
       } else if (errorMsg.includes('User not found')) {
-        setError('Foydalanuvchi topilmadi. Avval ro\'yxatdan o\'ting.');
+        setError('Пользователь не найден. Сначала зарегистрируйтесь.');
       } else {
         setError(errorMsg);
       }
@@ -61,8 +61,8 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl">
         <div className="bg-gray-800/60 backdrop-blur-md rounded-xl p-8 border border-gray-700/50 shadow-2xl">
-          <h1 className="text-2xl font-bold mb-1 text-center">Kirish</h1>
-          <p className="text-gray-400 text-center mb-6 text-sm">Hisobingizga kiring</p>
+          <h1 className="text-2xl font-bold mb-1 text-center">Вход</h1>
+          <p className="text-gray-400 text-center mb-6 text-sm">Войдите в свой аккаунт</p>
 
           {error && (
             <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
@@ -84,7 +84,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Parol</label>
+              <label className="block text-sm font-medium mb-2">Пароль</label>
               <input
                 type="password"
                 value={password}
@@ -102,22 +102,22 @@ export default function LoginPage() {
               whileTap={{ scale: 0.98 }}
               className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-semibold transition"
             >
-              {loading ? 'Kirish...' : 'Kirish'}
+              {loading ? 'Вход...' : 'Войти'}
             </motion.button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm">
-              Hisobingiz yo'qmi?{' '}
+              Нет аккаунта?{' '}
               <Link href="/register" className="text-blue-400 hover:text-blue-300 font-semibold">
-                Ro'yxatdan o'tish
+                Регистрация
               </Link>
             </p>
           </div>
 
           <div className="mt-4 text-center">
             <Link href="/" className="text-gray-500 hover:text-gray-400 text-sm">
-              Asosiy sahifaga qaytish
+              Вернуться на главную
             </Link>
           </div>
         </div>

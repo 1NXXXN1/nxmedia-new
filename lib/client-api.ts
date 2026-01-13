@@ -87,7 +87,7 @@ export async function fetchTopFilms(){
     // Filter out Indian movies and movies with rating below 50% (5.0 on TMDB scale)
     const indianLanguages = ['hi', 'ta', 'te', 'ml', 'kn', 'bn', 'mr', 'pa'];
     const filtered = results.filter((t: any) => !indianLanguages.includes(t.original_language) && (t.vote_average || 0) > 5.0);
-    return { items: filtered.slice(0, 12).map((t: any) => mapTmdbItem(t, 'movie')) };
+    return { items: filtered.slice(0, 14).map((t: any) => mapTmdbItem(t, 'movie')) };
   } catch (e) {
     console.error('TMDB top films error:', e);
     return { items: [] };
@@ -244,7 +244,7 @@ export async function fetchFilmDetails(filmId: number, type: 'movie' | 'tv') {
     const res = await fetch(`${TMDB_BASE}/${endpoint}?api_key=${TMDB_KEY}&language=ru-RU`, { cache: 'no-store' });
     
     if (!res.ok) {
-      console.error(`[fetchFilmDetails] TMDB ${type} ${filmId} not found`);
+      //console.error(`[fetchFilmDetails] TMDB ${type} ${filmId} not found`);
       return null;
     }
     
@@ -253,11 +253,11 @@ export async function fetchFilmDetails(filmId: number, type: 'movie' | 'tv') {
     // Validate data based on type
     const isValid = type === 'movie' ? data.title : data.name;
     if (!isValid) {
-      console.error(`[fetchFilmDetails] Invalid ${type} data for ${filmId}`);
+      //console.error(`[fetchFilmDetails] Invalid ${type} data for ${filmId}`);
       return null;
     }
     
-    console.log(`[fetchFilmDetails] TMDB ${filmId} loaded as ${type}: ${data.title || data.name}`);
+    //console.log(`[fetchFilmDetails] TMDB ${filmId} loaded as ${type}: ${data.title || data.name}`);
     
     return {
       kinopoiskId: data.id,
@@ -348,9 +348,9 @@ export async function getKinopoiskIdFromTmdb(tmdbId: number, mediaType: 'movie' 
     return { id: String(tmdbId), type: mediaType };
   }
   
-  console.log(`[KP ID Search] ===========================================`);
-  console.log(`[KP ID Search] Pipeline: TMDB ${tmdbId} (${mediaType}) → IMDb ID → KP ID`);
-  console.log(`[KP ID Search] ===========================================`);
+  //console.log(`[KP ID Search] ===========================================`);
+  //console.log(`[KP ID Search] Pipeline: TMDB ${tmdbId} (${mediaType}) → IMDb ID → KP ID`);
+  //console.log(`[KP ID Search] ===========================================`);
   
   const types: ('movie' | 'tv')[] = mediaType === 'movie' ? ['movie'] : ['tv'];
   
@@ -426,7 +426,7 @@ export async function getKinopoiskIdFromTmdb(tmdbId: number, mediaType: 'movie' 
   // Try each media type (movie/tv)
   for (const type of types) {
     try {
-      console.log(`[KP ID Search] Step 1: Fetching TMDB ${type} details and external IDs...`);
+      //console.log(`[KP ID Search] Step 1: Fetching TMDB ${type} details and external IDs...`);
       
       // Fetch TMDB details and external IDs in parallel
       const [detailsRes, externalRes] = await Promise.all([
@@ -435,7 +435,7 @@ export async function getKinopoiskIdFromTmdb(tmdbId: number, mediaType: 'movie' 
       ]);
       
       if (!detailsRes?.ok) {
-        console.log(`[KP ID Search] TMDB ${type} details request failed`);
+        //console.log(`[KP ID Search] TMDB ${type} details request failed`);
         continue;
       }
       
@@ -446,7 +446,7 @@ export async function getKinopoiskIdFromTmdb(tmdbId: number, mediaType: 'movie' 
                    tmdbData.first_air_date ? Number(tmdbData.first_air_date.slice(0, 4)) : null;
       const wantsAnimation = hasAnimationGenre(tmdbData.genres);
       
-      console.log(`[KP ID Search] TMDB Info: "${titleRu}" (${year}), Animation: ${wantsAnimation}`);
+      //console.log(`[KP ID Search] TMDB Info: "${titleRu}" (${year}), Animation: ${wantsAnimation}`);
       
       // Try IMDb ID lookup first
       if (externalRes?.ok) {
@@ -454,8 +454,8 @@ export async function getKinopoiskIdFromTmdb(tmdbId: number, mediaType: 'movie' 
         const imdbId = externalData.imdb_id;
         
         if (imdbId && typeof imdbId === 'string' && imdbId.startsWith('tt')) {
-          console.log(`[KP ID Search] Step 2: IMDb ID found: ${imdbId}`);
-          console.log(`[KP ID Search] Step 3: Searching Kinopoisk by IMDb ID...`);
+          //console.log(`[KP ID Search] Step 2: IMDb ID found: ${imdbId}`);
+          //console.log(`[KP ID Search] Step 3: Searching Kinopoisk by IMDb ID...`);
           
           try {
             const kpByImdbUrl = `/api/kp?path=${encodeURIComponent(`/api/v2.2/films?imdbId=${imdbId}`)}`;
@@ -465,27 +465,27 @@ export async function getKinopoiskIdFromTmdb(tmdbId: number, mediaType: 'movie' 
               const kpImdbData = await kpImdbRes.json();
               const items = kpImdbData.items || [];
               
-              console.log(`[KP ID Search] IMDb search returned ${items.length} result(s)`);
+                //console.log(`[KP ID Search] IMDb search returned ${items.length} result(s)`);
               
               if (items.length > 0) {
                 // Pick best match (prefer type match + year proximity)
                 const best = pickBestCandidate(items, { type, year, wantsAnimation });
                 if (best?.kinopoiskId) {
-                  console.log(`[KP ID Search] ✓ SUCCESS via IMDb: KP ID ${best.kinopoiskId} (${best.nameRu}, ${best.year})`);
+                  //console.log(`[KP ID Search] ✓ SUCCESS via IMDb: KP ID ${best.kinopoiskId} (${best.nameRu}, ${best.year})`);
                   return { id: String(best.kinopoiskId), type };
                 }
               }
             }
           } catch (e) {
-            console.warn('[KP ID Search] IMDb lookup failed:', e);
+            //console.warn('[KP ID Search] IMDb lookup failed:', e);
           }
         } else {
-          console.log(`[KP ID Search] No valid IMDb ID found in TMDB external_ids`);
+          //console.log(`[KP ID Search] No valid IMDb ID found in TMDB external_ids`);
         }
       }
       
       // Fallback: keyword search
-      console.log('[KP ID Search] Step 4: Fallback to keyword search...');
+      //console.log('[KP ID Search] Step 4: Fallback to keyword search...');
       
       if (!titleRu && !titleOriginal) continue;
       
@@ -494,19 +494,19 @@ export async function getKinopoiskIdFromTmdb(tmdbId: number, mediaType: 'movie' 
       for (const searchTitle of titlesToTry) {
         try {
           const searchUrl = `/api/kp?path=${encodeURIComponent(`/api/v2.1/films/search-by-keyword?keyword=${encodeURIComponent(searchTitle)}`)}`;
-          console.log(`[KP ID Search] Searching: "${searchTitle}"`);
+          //console.log(`[KP ID Search] Searching: "${searchTitle}"`);
           
           const kpRes = await fetch(searchUrl, { cache: 'no-store' }).catch(() => null);
           
           if (kpRes?.ok) {
             const kpData = await kpRes.json();
             const films = kpData.films || [];
-            console.log(`[KP ID Search] Found ${films.length} results`);
+            //console.log(`[KP ID Search] Found ${films.length} results`);
             
             if (films.length > 0) {
               const best = pickBestCandidate(films, { type, year, wantsAnimation });
               if (best?.filmId) {
-                console.log(`[KP ID Search] ✓ SUCCESS via keyword: KP ID ${best.filmId} (${best.nameRu}, ${best.year})`);
+                //console.log(`[KP ID Search] ✓ SUCCESS via keyword: KP ID ${best.filmId} (${best.nameRu}, ${best.year})`);
                 return { id: String(best.filmId), type };
               }
             }
@@ -516,12 +516,12 @@ export async function getKinopoiskIdFromTmdb(tmdbId: number, mediaType: 'movie' 
         }
       }
     } catch (e) {
-      console.error(`[KP ID Search] Error for type ${type}:`, e);
+      //console.error(`[KP ID Search] Error for type ${type}:`, e);
       continue;
     }
   }
   
-  console.error(`[KP ID Search] ✗ FAILED: Kinopoisk ID not found for TMDB ID ${tmdbId}`);
-  console.warn(`[KP ID Search] Player will be unavailable`);
+  //console.error(`[KP ID Search] ✗ FAILED: Kinopoisk ID not found for TMDB ID ${tmdbId}`);
+  //console.warn(`[KP ID Search] Player will be unavailable`);
   return { id: String(tmdbId), type: mediaType };
 }

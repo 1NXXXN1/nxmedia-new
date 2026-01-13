@@ -61,21 +61,39 @@ function CatalogContent() {
     setLoading(true);
     setPage(1);
     try {
-      const result = await searchFilmsByFilters({
-        type:
-          filterType === 'movies'
-            ? 'FILM'
-            : filterType === 'tv'
-            ? 'TV_SERIES'
-            : filterType === 'cartoons'
-            ? 'CARTOON'
-            : undefined,
-        order: sortBy === 'rating' ? 'RATING' : sortBy === 'year' ? 'YEAR' : 'NUM_VOTE',
-        yearFrom: filterYear ? Number(filterYear) : undefined,
-        page: 1,
-      });
-      setFilms(result.items || []);
-      setHasMore((result.items || []).length >= 24);
+      // Load 2 pages to get 24 items (20 + 4 from page 2)
+      const [result1, result2] = await Promise.all([
+        searchFilmsByFilters({
+          type:
+            filterType === 'movies'
+              ? 'FILM'
+              : filterType === 'tv'
+              ? 'TV_SERIES'
+              : filterType === 'cartoons'
+              ? 'CARTOON'
+              : undefined,
+          order: sortBy === 'rating' ? 'RATING' : sortBy === 'year' ? 'YEAR' : 'NUM_VOTE',
+          yearFrom: filterYear ? Number(filterYear) : undefined,
+          page: 1,
+        }),
+        searchFilmsByFilters({
+          type:
+            filterType === 'movies'
+              ? 'FILM'
+              : filterType === 'tv'
+              ? 'TV_SERIES'
+              : filterType === 'cartoons'
+              ? 'CARTOON'
+              : undefined,
+          order: sortBy === 'rating' ? 'RATING' : sortBy === 'year' ? 'YEAR' : 'NUM_VOTE',
+          yearFrom: filterYear ? Number(filterYear) : undefined,
+          page: 2,
+        }),
+      ]);
+      const allItems = [...(result1.items || []), ...(result2.items || [])].slice(0, 24);
+      setFilms(allItems);
+      setPage(2);
+      setHasMore(allItems.length >= 24);
     } catch (e) {
       console.error('Loading films failed:', e);
       setFilms([]);
@@ -110,23 +128,39 @@ function CatalogContent() {
     setLoading(true);
     try {
       const nextPage = page + 1;
-      const result = await searchFilmsByFilters({
-        type:
-          filterType === 'movies'
-            ? 'FILM'
-            : filterType === 'tv'
-            ? 'TV_SERIES'
-            : filterType === 'cartoons'
-            ? 'CARTOON'
-            : undefined,
-        order: sortBy === 'rating' ? 'RATING' : sortBy === 'year' ? 'YEAR' : 'NUM_VOTE',
-        yearFrom: filterYear ? Number(filterYear) : undefined,
-        page: nextPage,
-      });
-      const newFilms = result.items || [];
+      // Load 2 pages to get 24 items
+      const [result1, result2] = await Promise.all([
+        searchFilmsByFilters({
+          type:
+            filterType === 'movies'
+              ? 'FILM'
+              : filterType === 'tv'
+              ? 'TV_SERIES'
+              : filterType === 'cartoons'
+              ? 'CARTOON'
+              : undefined,
+          order: sortBy === 'rating' ? 'RATING' : sortBy === 'year' ? 'YEAR' : 'NUM_VOTE',
+          yearFrom: filterYear ? Number(filterYear) : undefined,
+          page: nextPage,
+        }),
+        searchFilmsByFilters({
+          type:
+            filterType === 'movies'
+              ? 'FILM'
+              : filterType === 'tv'
+              ? 'TV_SERIES'
+              : filterType === 'cartoons'
+              ? 'CARTOON'
+              : undefined,
+          order: sortBy === 'rating' ? 'RATING' : sortBy === 'year' ? 'YEAR' : 'NUM_VOTE',
+          yearFrom: filterYear ? Number(filterYear) : undefined,
+          page: nextPage + 1,
+        }),
+      ]);
+      const newFilms = [...(result1.items || []), ...(result2.items || [])].slice(0, 24);
       
       setFilms([...films, ...newFilms]);
-      setPage(nextPage);
+      setPage(nextPage + 1);
       setHasMore(newFilms.length >= 24);
     } catch (e) {
       console.error('Loading more failed:', e);
@@ -254,7 +288,7 @@ function CatalogContent() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 mb-8">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 mb-8">
               {films.map((film, i) => {
                 const filmId = String(film.tmdbId || film.filmId || film.kinopoiskId);
                 const mediaType = (film as any).mediaType || (film.type === 'series' ? 'tv' : 'movie');
@@ -293,7 +327,7 @@ function CatalogContent() {
                   mediaType={mediaType}
                   type={film.type}
                   priority={i < 5}
-                  showFavoriteButton={true}
+                  showFavoriteButton={!!user}
                   isFavorite={favoritesState[filmId] || false}
                   onFavoriteClick={handleFavoriteClick}
                 />

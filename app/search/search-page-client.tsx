@@ -101,7 +101,7 @@ export default function SearchPageClient() {
         <p className="text-center text-gray-400">Результатов не найдено</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
             {results.filter(film => film.kinopoiskId).map((film, i) => {
               const mediaType = (film as any).mediaType || (film.type === 'series' ? 'tv' : 'movie');
               const filmId = String(film.kinopoiskId);
@@ -139,7 +139,7 @@ export default function SearchPageClient() {
                   ratingImdb={film.ratingKinopoisk}
                   mediaType={mediaType}
                   priority={i < 3}
-                  showFavoriteButton={true}
+                  showFavoriteButton={!!user}
                   isFavorite={favoritesState[filmId] || false}
                   onFavoriteClick={handleFavoriteClick}
                 />

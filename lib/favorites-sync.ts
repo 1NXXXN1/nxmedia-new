@@ -160,7 +160,7 @@ export async function syncToSupabase(): Promise<void> {
       return;
     }
     
-    console.log(`[Sync] Starting sync of ${queue.length} operations...`);
+    //console.log(`[Sync] Starting sync of ${queue.length} operations...`);
     
     for (const operation of queue) {
       try {
@@ -205,11 +205,11 @@ export async function syncToSupabase(): Promise<void> {
     
     // Queue ni tozalaymiz
     localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify([]));
-    console.log('[Sync] Sync completed successfully');
+    //console.log('[Sync] Sync completed successfully');
     
     // Sync muvaffaqiyatli bo'lgandan keyin queue ni tozalaymiz
     localStorage.removeItem(SYNC_QUEUE_KEY);
-    console.log('[Sync] Cleared sync queue from localStorage');
+    //console.log('[Sync] Cleared sync queue from localStorage');
   } catch (err) {
     console.error('[Sync] Sync failed:', err);
   }
@@ -226,7 +226,7 @@ export async function loadFromSupabase(): Promise<void> {
       // User yo'q bo'lsa, localStorage ni tozalaymiz
       localStorage.setItem(FAVORITES_KEY, JSON.stringify([]));
       localStorage.removeItem(SYNC_QUEUE_KEY);
-      console.log('[Sync] Cleared localStorage (no user)');
+      //console.log('[Sync] Cleared localStorage (no user)');
       
       // Custom event yuboramiz
       window.dispatchEvent(new CustomEvent('favoritesChanged'));
@@ -259,7 +259,7 @@ export async function loadFromSupabase(): Promise<void> {
     // localStorage ni tozalab, Supabase dan yuklaymiz
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
     localStorage.removeItem(SYNC_QUEUE_KEY); // Har qanday kutilayotgan sync ni tozalaymiz
-    console.log(`[Sync] Cleared and loaded ${favorites.length} favorites from Supabase`);
+    //console.log(`[Sync] Cleared and loaded ${favorites.length} favorites from Supabase`);
     
     // Custom event yuboramiz
     window.dispatchEvent(new CustomEvent('favoritesChanged'));
