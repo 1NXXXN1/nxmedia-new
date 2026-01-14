@@ -75,7 +75,11 @@ export default function RootLayout({
             />
           </div>
 
-          <ScrollToTop />
+
+          {/* ScrollToTop button higher above footer */}
+          <div className="fixed right-6 z-[100]" style={{ bottom: '5.5rem' }}>
+            <ScrollToTop />
+          </div>
 
           {/* HEADER */}
           <header className="fixed top-0 left-0 w-full z-50 border-b border-white/5 bg-[#0b0b0f]/80 backdrop-blur">
