@@ -87,8 +87,8 @@ function FavoritesContent() {
         <h1 className="text-3xl font-bold">Избранное</h1>
       </div>
 
-      <div className="max-w-7l mx-auto grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
-        {favorites.map((media, i) => (
+      <div className="grid grid-cols-2 md:grid-cols-7 md:grid-rows-2 gap-4">
+        {favorites.slice(0, 14).map((media, i) => (
           <div key={`${media.id}-${i}`} className="relative group">
             <FilmCard
               id={media.id}
@@ -114,6 +114,9 @@ function FavoritesContent() {
               </svg>
             </button>
           </div>
+        ))}
+        {Array.from({ length: 14 - favorites.slice(0, 14).length }).map((_, idx) => (
+          <div key={`empty-fav-${idx}`} />
         ))}
       </div>
     </div>

@@ -29,6 +29,7 @@ interface SearchResult {
 export default function SearchPageClient() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
+  const FILMS_PER_PAGE = 14;
   const [results, setResults] = useState<SearchResult[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -56,8 +57,7 @@ export default function SearchPageClient() {
     async function search() {
       setLoading(true);
       try {
-        const data = await searchKinopoisk(query, page);
-        // API v2.2 returns 'items' instead of 'films'
+        const data = await searchKinopoisk(query, page, FILMS_PER_PAGE);
         setResults(data.items || []);
       } catch (e) {
         console.error('Search error:', e);
@@ -101,8 +101,8 @@ export default function SearchPageClient() {
         <p className="text-center text-gray-400">Результатов не найдено</p>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
-            {results.filter(film => film.kinopoiskId).map((film, i) => {
+          <div className="grid grid-cols-2 md:grid-cols-7 md:grid-rows-2 gap-4 mb-8">
+            {results.filter(film => film.kinopoiskId).slice(0, 14).map((film, i) => {
               const mediaType = (film as any).mediaType || (film.type === 'series' ? 'tv' : 'movie');
               const filmId = String(film.kinopoiskId);
               
@@ -145,6 +145,9 @@ export default function SearchPageClient() {
                 />
               );
             })}
+            {Array.from({ length: 14 - results.filter(film => film.kinopoiskId).slice(0, 14).length }).map((_, idx) => (
+              <div key={`empty-search-${idx}`} />
+            ))}
           </div>
 
           <div className="flex justify-center gap-4">

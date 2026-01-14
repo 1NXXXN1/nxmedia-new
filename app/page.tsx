@@ -193,9 +193,12 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">🎬 Популярные Фильмы</h2>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+          <div className="grid grid-cols-2 md:grid-cols-7 md:grid-rows-2 gap-4">
             {films.slice(0, 14).map((film, i) => (
               <FilmCardWithFavorite key={film.kinopoiskId} film={film} idx={i} />
+            ))}
+            {Array.from({ length: 14 - films.slice(0, 14).length }).map((_, idx) => (
+              <div key={`empty-film-${idx}`} />
             ))}
           </div>
         </section>
@@ -206,9 +209,12 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">📺 Популярные Сериалы</h2>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+          <div className="grid grid-cols-2 md:grid-cols-7 md:grid-rows-2 gap-4">
             {series.slice(0, 14).map((s, i) => (
               <FilmCardWithFavorite key={s.kinopoiskId} film={s} idx={i} />
+            ))}
+            {Array.from({ length: 14 - series.slice(0, 14).length }).map((_, idx) => (
+              <div key={`empty-series-${idx}`} />
             ))}
           </div>
         </section>

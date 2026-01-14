@@ -26,7 +26,6 @@ export default function SearchBar() {
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -70,8 +69,8 @@ export default function SearchBar() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      setShowDropdown(false);
-      router.push(`/search?q=${encodeURIComponent(query)}`);
+        setShowDropdown(false);
+        router.push(`/search?q=${encodeURIComponent(query)}`); 
     }
   };
 
@@ -90,7 +89,7 @@ export default function SearchBar() {
           placeholder="Поиск фильмов..."
           className="w-full px-4 py-2 pr-12 rounded-lg bg-white/5 text-white placeholder-gray-500 border border-white/10 focus:border-blue-400 focus:outline-none transition-colors"
         />
-        <button
+          <button
           type="submit"
           className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-white transition-colors"
           aria-label="Search"
@@ -126,10 +125,8 @@ export default function SearchBar() {
                 return (
                   <Link
                     key={film.kinopoiskId}
-                    href={watchUrl}
                     onClick={handleResultClick}
-                    className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
-                  >
+                    className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0" href={'/'}                  >
                     {film.posterUrlPreview ? (
                       <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-800">
                         <Image

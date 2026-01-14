@@ -88,12 +88,12 @@ function CatalogContent() {
           order: sortBy === 'rating' ? 'RATING' : sortBy === 'year' ? 'YEAR' : 'NUM_VOTE',
           yearFrom: filterYear ? Number(filterYear) : undefined,
           page: 2,
-        }),
+        })
       ]);
-      const allItems = [...(result1.items || []), ...(result2.items || [])].slice(0, 24);
+      const allItems = [...(result1.items || []), ...(result2.items || [])].slice(0, 21);
       setFilms(allItems);
       setPage(2);
-      setHasMore(allItems.length >= 24);
+      setHasMore(allItems.length >= 21);
     } catch (e) {
       console.error('Loading films failed:', e);
       setFilms([]);
@@ -155,13 +155,13 @@ function CatalogContent() {
           order: sortBy === 'rating' ? 'RATING' : sortBy === 'year' ? 'YEAR' : 'NUM_VOTE',
           yearFrom: filterYear ? Number(filterYear) : undefined,
           page: nextPage + 1,
-        }),
+        })
       ]);
-      const newFilms = [...(result1.items || []), ...(result2.items || [])].slice(0, 24);
+      const newFilms = [...(result1.items || []), ...(result2.items || [])].slice(0, 21);
       
       setFilms([...films, ...newFilms]);
       setPage(nextPage + 1);
-      setHasMore(newFilms.length >= 24);
+      setHasMore(newFilms.length >= 21);
     } catch (e) {
       console.error('Loading more failed:', e);
       setHasMore(false);
@@ -203,7 +203,7 @@ function CatalogContent() {
         </div>
 
         {/* Filter Bar */}
-        <div className="mb-8 p-4 bg-gray-800/50 rounded-lg backdrop-blur border border-gray-700/50 flex flex-wrap gap-4 items-center">
+        <div className="mb-8 p-4 bg-gray-800/50 rounded-lg backdrop-blur border border-gray-700/50 flex flex-wrap gap-4 items-end  ">
           <div className="flex-1 min-w-[200px]">
             <label className="text-xs font-semibold text-gray-300 block mb-2">ТИП</label>
             <select
@@ -229,7 +229,7 @@ function CatalogContent() {
                 setSortBy(e.target.value as any);
                 setPage(1);
               }}
-              className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 hover-border-blue-400 focus:outline-none focus:border-blue-400 text-sm"
+            className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 hover:border-blue-400 focus:outline-none focus:border-blue-400 text-sm"
             >
               <option value="rating">По рейтингу</option>
               <option value="year">По году</option>
@@ -253,10 +253,10 @@ function CatalogContent() {
             />
           </div>
 
-          <div className="flex items-end gap-3 ml-auto">
+          <div className="flex items-end gap-3 ml-auto justify-center w-full">
             <button
               onClick={() => updateFilters(filterType, filterYear, sortBy)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded transition text-sm font-medium"
+              className="w-28 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded transition text-sm font-medium"
             >
               Искать
             </button>
@@ -269,7 +269,7 @@ function CatalogContent() {
                 setFilms([]);
                 router.push('/catalog');
               }}
-              className="px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-500/30 rounded transition text-sm font-medium"
+              className="w-28 px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-500/30 rounded transition text-sm font-medium"
             >
               Сбросить
             </button>
@@ -288,52 +288,54 @@ function CatalogContent() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 mb-8">
-              {films.map((film, i) => {
-                const filmId = String(film.tmdbId || film.filmId || film.kinopoiskId);
-                const mediaType = (film as any).mediaType || (film.type === 'series' ? 'tv' : 'movie');
-
-                const handleFavoriteClick = (e: React.MouseEvent) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  
-                  const isFav = isLocalFavorite(filmId, mediaType);
-                  if (isFav) {
-                    removeLocalFavorite(filmId, mediaType);
-                  } else {
-                    addLocalFavorite({
-                      id: filmId,
-                      title: film.nameRu || film.nameEn || film.nameOriginal || 'Film',
-                      poster: film.posterUrlPreview,
-                      year: film.year,
-                      rating: film.ratingKinopoisk,
-                      imdbRating: film.ratingKinopoisk,
-                      type: mediaType,
-                      mediaType: mediaType
-                    });
-                  }
-                  updateFavoritesState();
-                };
-
-                return (
-                <FilmCard
-                  key={`${film.tmdbId || film.filmId || film.kinopoiskId}-${i}-${favoritesState[filmId]}`}
-                  id={filmId}
-                  title={film.nameRu || film.nameEn || film.nameOriginal || 'Film'}
-                  poster={film.posterUrlPreview}
-                  year={film.year}
-                  ratingKinopoisk={film.ratingKinopoisk}
-                  ratingImdb={film.ratingKinopoisk}
-                  mediaType={mediaType}
-                  type={film.type}
-                  priority={i < 5}
-                  showFavoriteButton={!!user}
-                  isFavorite={favoritesState[filmId] || false}
-                  onFavoriteClick={handleFavoriteClick}
-                />
+            {Array.from({ length: Math.ceil(films.length / 14) }).map((_, gridIdx) => {
+              const posters = films.slice(gridIdx * 14, gridIdx * 14 + 14);
+              return (
+                <div key={gridIdx} className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-8">
+                  {posters.map((film, i) => {
+                    const filmId = String(film.tmdbId || film.filmId || film.kinopoiskId);
+                    const mediaType = (film as any).mediaType || (film.type === 'series' ? 'tv' : 'movie');
+                    const handleFavoriteClick = (e: React.MouseEvent) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const isFav = isLocalFavorite(filmId, mediaType);
+                      if (isFav) {
+                        removeLocalFavorite(filmId, mediaType);
+                      } else {
+                        addLocalFavorite({
+                          id: filmId,
+                          title: film.nameRu || film.nameEn || film.nameOriginal || 'Film',
+                          poster: film.posterUrlPreview,
+                          year: film.year,
+                          rating: film.ratingKinopoisk,
+                          imdbRating: film.ratingKinopoisk,
+                          type: mediaType,
+                          mediaType: mediaType
+                        });
+                      }
+                      updateFavoritesState();
+                    };
+                    return (
+                      <FilmCard
+                        key={`${film.tmdbId || film.filmId || film.kinopoiskId}-${gridIdx * 14 + i}-${favoritesState[filmId]}`}
+                        id={filmId}
+                        title={film.nameRu || film.nameEn || film.nameOriginal || 'Film'}
+                        poster={film.posterUrlPreview}
+                        year={film.year}
+                        ratingKinopoisk={film.ratingKinopoisk}
+                        ratingImdb={film.ratingKinopoisk}
+                        mediaType={mediaType}
+                        type={film.type}
+                        priority={i < 5}
+                        showFavoriteButton={!!user}
+                        isFavorite={favoritesState[filmId] || false}
+                        onFavoriteClick={handleFavoriteClick}
+                      />
+                    );
+                  })}
+                </div>
               );
             })}
-            </div>
 
             {/* Load More Button */}
             {loading ? (

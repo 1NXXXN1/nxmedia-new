@@ -110,7 +110,7 @@ export async function fetchTopSeries(){
   }
 }
 
-export async function searchKinopoisk(keyword: string, page = 1){
+export async function searchKinopoisk(keyword: string, page = 1, limit = 14){
   if (!TMDB_KEY) return { items: [] };
   try {
     const r = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(keyword)}&page=${page}&language=ru-RU`, { cache: 'no-store' });
@@ -120,7 +120,7 @@ export async function searchKinopoisk(keyword: string, page = 1){
     return {
       items: results
         .filter((t: any) => t.media_type !== 'person' && t.poster_path)
-        .slice(0, 15)
+        .slice(0, limit)
         .map((t: any) => ({
           kinopoiskId: t.id,
           filmId: t.id,

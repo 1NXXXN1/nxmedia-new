@@ -37,7 +37,7 @@ export default function PersonPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 21;
 
   useEffect(() => {
     async function loadPerson() {
