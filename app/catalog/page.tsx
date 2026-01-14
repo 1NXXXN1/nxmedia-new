@@ -203,7 +203,7 @@ function CatalogContent() {
         </div>
 
         {/* Filter Bar */}
-        <div className="mb-8 p-4 bg-gray-800/50 rounded-lg backdrop-blur border border-gray-700/50 flex flex-wrap gap-4 items-end">
+        <div className="mb-8 p-4 bg-gray-800/50 rounded-lg backdrop-blur border border-gray-700/50 flex flex-wrap gap-4 items-center">
           <div className="flex-1 min-w-[200px]">
             <label className="text-xs font-semibold text-gray-300 block mb-2">ТИП</label>
             <select

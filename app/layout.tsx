@@ -55,9 +55,7 @@ export default function RootLayout({
                   }
                 });
 
-                setInterval(() => {
-                  console.clear?.();
-                }, 5000);
+                
               }
             `,
           }}
@@ -120,27 +118,24 @@ export default function RootLayout({
           </header>
 
           {/* CONTENT */}
-          <div className="relative z-10 mx-auto max-w-[1600px] px-4 flex-grow pt-[70px] md:pt-[76px]">
+          <div className="relative z-10 mx-auto max-w-[1600px] px-4 flex-grow pt-24 md:pt-20 pb-24">
             <main className="py-6 flex-grow">{children}</main>
-
-            {/* FOOTER */}
-            <footer className="py-6 text-center space-y-2">
-              <VisitorCounter />
-
-              <div className="text-sm text-gray-500">
-                © {new Date().getFullYear()} |{' '}
-                <Link
-                  href="https://t.me/nodir_khajiev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white"
-                >
-                  NX
-                </Link>
-              </div>
-
-            </footer>
           </div>
+
+          {/* FOOTER */}
+          <footer className="bottom-0 left-0 w-full py-6 text-center space-y-2 z-50 bg-transparent">
+            <div className="text-sm text-gray-500">
+              © {new Date().getFullYear()} |{' '}
+              <Link
+                href="https://t.me/nodir_khajiev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white"
+              >
+                NX
+              </Link>
+            </div>
+          </footer>
 
         </ClientProviders>
       </body>
