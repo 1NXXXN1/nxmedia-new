@@ -1,14 +1,20 @@
 'use client';
 
+
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import UserMenu from '@/components/UserMenu';
 import Link from 'next/link';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState } from 'react';
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
   return (
-    <AuthProvider>
-      {children}
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        {children}
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

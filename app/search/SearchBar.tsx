@@ -45,7 +45,7 @@ export default function SearchBar() {
       setShowDropdown(false);
       return;
     }
-    
+
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
@@ -62,7 +62,7 @@ export default function SearchBar() {
         setLoading(false);
       }
     }, 300); // 300ms debounce
-    
+
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -121,43 +121,47 @@ export default function SearchBar() {
               {results.map((film) => {
                 const mediaType = film.mediaType || (film.type === 'series' ? 'tv' : 'movie');
                 const watchUrl = `/watch/${mediaType === 'tv' ? 'series' : 'movie'}/${film.kinopoiskId}`;
-                
+
                 return (
                   <Link
                     key={film.kinopoiskId}
                     onClick={handleResultClick}
-                    className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0" href={'/'}                  >
-                    {film.posterUrlPreview ? (
-                      <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-800">
-                        <Image
-                          src={film.posterUrlPreview}
-                          alt={film.nameRu || film.nameEn || ''}
-                          fill
-                          sizes="48px"
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-12 h-16 flex-shrink-0 rounded bg-gray-800 flex items-center justify-center">
-                        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">
-                        {film.nameRu || film.nameEn}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        {film.year && <span>{film.year}</span>}
-                        {(film.ratingKinopoisk || film.ratingImdb) && <span>•</span>}
-                        {film.ratingKinopoisk && (
-                          <span className="text-orange-400">КП {film.ratingKinopoisk.toFixed(1)}</span>
-                        )}
-                        {film.ratingKinopoisk && film.ratingImdb && <span>•</span>}
-                        {film.ratingImdb && (
-                          <span className="text-yellow-400">IMDb {film.ratingImdb.toFixed(1)}</span>
-                        )}
+                    href={watchUrl as any}
+                    className="block"
+                  >
+                    <div className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
+                      {film.posterUrlPreview ? (
+                        <div className="relative w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-800">
+                          <Image
+                            src={film.posterUrlPreview}
+                            alt={film.nameRu || film.nameEn || ''}
+                            fill
+                            sizes="48px"
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-16 flex-shrink-0 rounded bg-gray-800 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white truncate">
+                          {film.nameRu || film.nameEn}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          {film.year && <span>{film.year}</span>}
+                          {(film.ratingKinopoisk || film.ratingImdb) && <span>•</span>}
+                          {film.ratingKinopoisk && (
+                            <span className="text-orange-400">КП {film.ratingKinopoisk.toFixed(1)}</span>
+                          )}
+                          {film.ratingKinopoisk && film.ratingImdb && <span>•</span>}
+                          {film.ratingImdb && (
+                            <span className="text-yellow-400">IMDb {film.ratingImdb.toFixed(1)}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Link>
