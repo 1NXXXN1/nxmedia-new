@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { fetchFilmDetails, fetchFilmStaff, getKinopoiskIdFromTmdb } from '@/lib/client-api';
@@ -45,108 +46,63 @@ interface Actor {
 }
 
 export default function WatchSeriesPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const [film, setFilm] = useState<FilmDetail | null>(null);
-  const [actors, setActors] = useState<Actor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isFav, setIsFav] = useState(false);
-  const [kinopoiskId, setKinopoiskId] = useState<string>('');
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [playerError, setPlayerError] = useState<string>('');
   const { user } = useAuth();
+  const { id } = useParams();
+  const [isFav, setIsFav] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
-  const checkFavorite = (filmId: string) => {
-    const favStatus = isLocalFavorite(filmId, 'tv');
-    setIsFav(favStatus);
-  };
+  const { data: film, isLoading: filmLoading } = useQuery({
+    queryKey: ['series-details', id],
+    queryFn: () => fetchFilmDetails(Number(id), 'tv'),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10,
+  });
 
-  useEffect(() => {
-    async function loadFilmAndActors() {
-      setLoading(true);
-      try {
-        // Fetch all data in parallel
-        const [tmdbData, kpResult, staffData] = await Promise.all([
-          fetchFilmDetails(Number(id), 'tv'),
-          getKinopoiskIdFromTmdb(Number(id), 'tv'),
-          fetchFilmStaff(Number(id), 'tv'),
-        ]);
+  const { data: kpResult } = useQuery({
+    queryKey: ['kinopoisk-id-series', id],
+    queryFn: () => getKinopoiskIdFromTmdb(Number(id), 'tv'),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10,
+  });
 
-        if (!tmdbData) {
-          setLoading(false);
-          return;
-        }
-        setFilm(tmdbData);
+  const { data: staffData } = useQuery({
+    queryKey: ['series-staff', id],
+    queryFn: () => fetchFilmStaff(Number(id), 'tv'),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10,
+  });
 
-        if (kpResult?.id && kpResult.id !== String(id)) {
-          setKinopoiskId(kpResult.id);
-          setPlayerError('');
-        } else {
-          setPlayerError('Видеоплеер временно недоступен для этого контента');
-        }
-
-        if (staffData?.items) {
-          const actorsList = staffData.items.filter((person: any) => person.professionKey === 'ACTOR').slice(0, 10);
-          setActors(actorsList || []);
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        //console.error('[Watch Series] Error loading series:', e);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (id) {
-      setKinopoiskId('');
-      setIframeLoaded(false);
-      setPlayerError('');
-      setLoading(true);
-      loadFilmAndActors();
-      checkFavorite(id);
-
-      const handleStorageChange = () => {
-        checkFavorite(id);
-      };
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
-  }, [id]);
+  // Derived values from query results
+  const loading = filmLoading;
+  const kinopoiskId = kpResult?.id;
+  const actors = staffData?.items ? staffData.items.filter((person: any) => person.professionKey === 'ACTOR').slice(0, 10) : [];
+  const playerError = (!kinopoiskId || kinopoiskId === String(id)) ? 'Видеоплеер временно недоступен для этого контента' : '';
 
   // Load iframe with obfuscated URL
   useEffect(() => {
     if (!user || !kinopoiskId || loading || !film) {
       return;
     }
-    
-    //console.log(`[Watch Series] Creating iframe for Kinopoisk ID: ${kinopoiskId}`);
-    
     const container = document.getElementById('player-container');
     if (!container) {
       return;
     }
-    
     const existingIframe = container.querySelector('iframe');
     if (existingIframe) {
       existingIframe.remove();
     }
-    
     const frame = document.createElement('iframe');
     frame.src = `/api/proxy?id=${kinopoiskId}`;
     frame.className = 'absolute inset-0 w-full h-full border-0';
     frame.allowFullscreen = true;
     frame.allow = 'autoplay *; encrypted-media *';
     frame.referrerPolicy = 'no-referrer';
-    
     frame.onload = () => {
-      //console.log('[Watch Series] Iframe loaded successfully');
       setIframeLoaded(true);
     };
-    
     frame.onerror = (e) => {
-      //console.error('[Watch Series] Iframe load error:', e);
+      // handle error if needed
     };
-    
     container.appendChild(frame);
   }, [kinopoiskId, loading, film, user]);
 
@@ -156,10 +112,8 @@ export default function WatchSeriesPage() {
       e.stopPropagation();
     }
     if (!film) return;
-
-    // Darhol localStorage ni yangilaymiz
     if (isFav) {
-      removeLocalFavorite(id, 'tv');
+      removeLocalFavorite(String(id), 'tv');
       setIsFav(false);
     } else {
       const newFavorite = {
@@ -170,13 +124,11 @@ export default function WatchSeriesPage() {
         rating: film.ratingKinopoisk,
         imdbRating: film.ratingImdb,
         year: film.year,
-        type: 'film'
+        type: 'film',
       };
       addLocalFavorite(newFavorite);
       setIsFav(true);
     }
-    
-    // Background da sync bo'ladi avtomatik
   };
 
   if (loading) {
@@ -211,7 +163,6 @@ export default function WatchSeriesPage() {
               <p className="text-gray-500 text-sm">Poster mavjud emas</p>
             </div>
           )}
-          
           {/* Heart Button Overlay */}
           {user && (
             <motion.button
@@ -230,7 +181,6 @@ export default function WatchSeriesPage() {
             </motion.button>
           )}
         </div>
-
         {/* Info and Description */}
         <div className="space-y-4 md:max-w-xl md:mx-auto">
           {/* Title */}
@@ -240,7 +190,6 @@ export default function WatchSeriesPage() {
               <p className="text-xs text-gray-400">{film.nameEn}</p>
             )}
           </div>
-
           {/* Rating and Stats */}
           <div className="flex flex-wrap gap-2">
             {film.ratingKinopoisk && (
@@ -260,7 +209,6 @@ export default function WatchSeriesPage() {
               </div>
             )}
           </div>
-
           {/* Meta Info */}
           <div className="flex flex-wrap gap-4 text-gray-300 py-3 border-y border-gray-700">
             <div>
@@ -302,7 +250,6 @@ export default function WatchSeriesPage() {
               </div>
             )}
           </div>
-
           {/* Genres */}
           {film.genres && film.genres.length > 0 && (
             <div>
@@ -316,7 +263,6 @@ export default function WatchSeriesPage() {
               </div>
             </div>
           )}
-
           {/* Description */}
           {film.description && (
             <div className="space-y-2 bg-gray-800/30 p-5 rounded-lg border border-gray-700">
@@ -326,7 +272,6 @@ export default function WatchSeriesPage() {
           )}
         </div>
       </div>
-
       {/* Player */}
       <div className="space-y-2 max-w-5xl mx-auto">
         <h2 className="text-lg font-bold">Смотреть</h2>
@@ -361,7 +306,6 @@ export default function WatchSeriesPage() {
           ) : null}
         </div>
       </div>
-
       {/* Cast */}
       {actors.length > 0 && (
         <div className="space-y-4 max-w-4xl mx-auto">

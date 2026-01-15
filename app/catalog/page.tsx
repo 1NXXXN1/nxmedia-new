@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { searchFilmsByFilters } from '@/lib/client-api';
@@ -29,22 +30,14 @@ function CatalogContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   
-  const [films, setFilms] = useState<Film[]>([]);
+  // const [films, setFilms] = useState<Film[]>([]);
+  // const [loading, setLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [localFilms, setFilms] = useState<Film[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [favoritesState, setFavoritesState] = useState<Record<string, boolean>>({});
 
-  const updateFavoritesState = useCallback(() => {
-    const newState: Record<string, boolean> = {};
-    films.forEach(film => {
-      const id = String(film.tmdbId || film.filmId || film.kinopoiskId);
-      const mediaType = (film.type === 'series' ? 'tv' : 'movie') as 'movie' | 'tv';
-      newState[id] = isLocalFavorite(id, mediaType);
-    });
-    setFavoritesState(newState);
-  }, [films, user]);
-  
   // Get filters from URL or use defaults
   const [filterType, setFilterType] = useState<'all' | 'movies' | 'tv' | 'cartoons'>(
     (searchParams.get('type') as any) || 'all'
@@ -57,11 +50,9 @@ function CatalogContent() {
   );
   const hasSearched = searchParams.has('searched');
 
-  const loadInitialFilms = useCallback(async () => {
-    setLoading(true);
-    setPage(1);
-    try {
-      // Load 2 pages to get 24 items (20 + 4 from page 2)
+  const { data: filmsData, isLoading: loadingQuery } = useQuery({
+    queryKey: ['catalog-films', filterType, filterYear, sortBy, hasSearched],
+    queryFn: async () => {
       const [result1, result2] = await Promise.all([
         searchFilmsByFilters({
           type:
@@ -90,23 +81,27 @@ function CatalogContent() {
           page: 2,
         })
       ]);
-      const allItems = [...(result1.items || []), ...(result2.items || [])].slice(0, 21);
-      setFilms(allItems);
-      setPage(2);
-      setHasMore(allItems.length >= 21);
-    } catch (e) {
-      console.error('Loading films failed:', e);
-      setFilms([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [filterType, sortBy, filterYear]);
+      return [...(result1.items || []), ...(result2.items || [])].slice(0, 21);
+    },
+    enabled: hasSearched,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const updateFavoritesState = useCallback(() => {
+    const newState: Record<string, boolean> = {};
+    (filmsData || []).forEach(film => {
+      const id = String(film.tmdbId || film.filmId || film.kinopoiskId);
+      const mediaType = (film.type === 'series' ? 'tv' : 'movie') as 'movie' | 'tv';
+      newState[id] = isLocalFavorite(id, mediaType);
+    });
+    setFavoritesState(newState);
+  }, [filmsData, user]);
 
   // Load films only when filters change (not on initial mount)
-  useEffect(() => {
-    if (!hasSearched) return;
-    loadInitialFilms();
-  }, [hasSearched, loadInitialFilms]);
+  // useEffect(() => {
+  //   if (!hasSearched) return;
+  //   loadInitialFilms();
+  // }, [hasSearched, loadInitialFilms]);
 
   useEffect(() => {
     updateFavoritesState();
@@ -159,7 +154,7 @@ function CatalogContent() {
       ]);
       const newFilms = [...(result1.items || []), ...(result2.items || [])].slice(0, 21);
       
-      setFilms([...films, ...newFilms]);
+      setFilms([...localFilms, ...newFilms]);
       setPage(nextPage + 1);
       setHasMore(newFilms.length >= 21);
     } catch (e) {
@@ -282,14 +277,14 @@ function CatalogContent() {
             <p className="text-lg mb-2">📽️ Выбери фильтры и нажми "Искать"</p>
             <p className="text-sm">Пока поиск не запущен, результаты не показываем</p>
           </div>
-        ) : films.length === 0 && !loading ? (
+        ) : (filmsData?.length === 0 && !loadingQuery) ? (
           <div className="text-center py-12 text-gray-400">
             <p className="text-lg">Фильмы не найдены</p>
           </div>
         ) : (
           <>
-            {Array.from({ length: Math.ceil(films.length / 14) }).map((_, gridIdx) => {
-              const posters = films.slice(gridIdx * 14, gridIdx * 14 + 14);
+            {Array.from({ length: Math.ceil((filmsData?.length || 0) / 14) }).map((_, gridIdx) => {
+              const posters = (filmsData || []).slice(gridIdx * 14, gridIdx * 14 + 14);
               return (
                 <div key={gridIdx} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4 md:gap-6 mb-8">
                   {posters.map((film, i) => {
@@ -338,13 +333,13 @@ function CatalogContent() {
             })}
 
             {/* Load More Button */}
-            {loading ? (
+            {loadingQuery ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin">
                   <div className="w-8 h-8 border-4 border-gray-700 border-t-blue-500 rounded-full"></div>
                 </div>
               </div>
-            ) : hasMore && films.length > 0 ? (
+            ) : hasMore && filmsData && filmsData.length > 0 ? (
               <div className="text-center py-8">
                 <button
                   onClick={loadMore}

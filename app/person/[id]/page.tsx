@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -31,85 +32,96 @@ export default function PersonPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [person, setPerson] = useState<PersonDetails | null>(null);
-  const [credits, setCredits] = useState<Credit[]>([]);
-  const [allCredits, setAllCredits] = useState<Credit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
   const ITEMS_PER_PAGE = 21;
 
-  useEffect(() => {
-    async function loadPerson() {
-      const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
-      if (!TMDB_KEY) return;
-
-      try {
-        // Fetch person details (try Russian first, fallback to English if biography is empty)
-        const personRes = await fetch(
-          `https://api.themoviedb.org/3/person/${id}?api_key=${TMDB_KEY}&language=ru-RU`,
-          { cache: 'no-store' }
-        );
-        if (personRes.ok) {
-          const personData = await personRes.json();
-          
-          // If biography is empty in Russian, fetch English version
-          if (!personData.biography || personData.biography.trim() === '') {
-            const personEnRes = await fetch(
-              `https://api.themoviedb.org/3/person/${id}?api_key=${TMDB_KEY}&language=en-US`,
-              { cache: 'no-store' }
-            );
-            if (personEnRes.ok) {
-              const personEnData = await personEnRes.json();
-              personData.biography = personEnData.biography || '';
-            }
+  const { data: person, isLoading: loading } = useQuery({
+    queryKey: ['person-details', id],
+    queryFn: async () => {
+      if (!TMDB_KEY) return null;
+      const personRes = await fetch(
+        `https://api.themoviedb.org/3/person/${id}?api_key=${TMDB_KEY}&language=ru-RU`,
+        { cache: 'no-store' }
+      );
+      if (personRes.ok) {
+        const personData = await personRes.json();
+        if (!personData.biography || personData.biography.trim() === '') {
+          const personEnRes = await fetch(
+            `https://api.themoviedb.org/3/person/${id}?api_key=${TMDB_KEY}&language=en-US`,
+            { cache: 'no-store' }
+          );
+          if (personEnRes.ok) {
+            const personEnData = await personEnRes.json();
+            personData.biography = personEnData.biography || '';
           }
-          
-          setPerson(personData);
         }
-
-        // Fetch combined credits
-        const creditsRes = await fetch(
-          `https://api.themoviedb.org/3/person/${id}/combined_credits?api_key=${TMDB_KEY}&language=ru-RU`,
-          { cache: 'no-store' }
-        );
-        if (creditsRes.ok) {
-          const creditsData = await creditsRes.json();
-          // Combine cast and crew, remove duplicates by unique film+role combination
-          const allCreditsList = [...(creditsData.cast || []), ...(creditsData.crew || [])];
-          
-          // Remove duplicates: keep only unique combinations of id + media_type
-          const uniqueMap = new Map();
-          allCreditsList.forEach((c: any) => {
-            const key = `${c.id}-${c.media_type}`;
-            if (!uniqueMap.has(key)) {
-              uniqueMap.set(key, c);
-            }
-          });
-          
-          const sorted = Array.from(uniqueMap.values())
-            .filter((c: any) => c.media_type === 'movie' || c.media_type === 'tv')
-            .filter((c: any) => (c.vote_average || 0) >= 6.0) // Only popular/good films
-            .sort((a: any, b: any) => {
-              // Sort by popularity (descending)
-              const popA = a.popularity || 0;
-              const popB = b.popularity || 0;
-              return popB - popA;
-            });
-          
-          setAllCredits(sorted);
-          setCredits(sorted.slice(0, ITEMS_PER_PAGE));
-          setHasMore(sorted.length > ITEMS_PER_PAGE);
-        }
-      } catch (e) {
-        console.error('Error loading person:', e);
-      } finally {
-        setLoading(false);
+        return personData;
       }
-    }
+      return null;
+    },
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10,
+  });
 
-    if (id) loadPerson();
-  }, [id]);
+  const { data: creditsData } = useQuery({
+    queryKey: ['person-credits', id],
+    queryFn: async () => {
+      if (!TMDB_KEY) return [];
+      const creditsRes = await fetch(
+        `https://api.themoviedb.org/3/person/${id}/combined_credits?api_key=${TMDB_KEY}&language=ru-RU`,
+        { cache: 'no-store' }
+      );
+      if (creditsRes.ok) {
+        const creditsData = await creditsRes.json();
+        const allCreditsList = [...(creditsData.cast || []), ...(creditsData.crew || [])];
+        const uniqueMap = new Map();
+        allCreditsList.forEach((c: any) => {
+          const key = `${c.id}-${c.media_type}`;
+          if (!uniqueMap.has(key)) {
+            uniqueMap.set(key, c);
+          }
+        });
+        const sorted = Array.from(uniqueMap.values())
+          .filter((c: any) => c.media_type === 'movie' || c.media_type === 'tv')
+          .filter((c: any) => (c.vote_average || 0) >= 6.0)
+          .sort((a: any, b: any) => {
+            const popA = a.popularity || 0;
+            const popB = b.popularity || 0;
+            return popB - popA;
+          });
+        return sorted;
+      }
+      return [];
+    },
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const allCredits = creditsData || [];
+  const [page, setPage] = useState(1);
+  const [credits, setCredits] = useState<Credit[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+
+  // When allCredits changes, always reset page to 1 (but do not update credits/hasMore here)
+  useEffect(() => {
+    if (page !== 1) {
+      setPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allCredits]);
+
+  // When page or allCredits changes, update credits and hasMore
+  useEffect(() => {
+    const newCredits = allCredits.slice(0, page * ITEMS_PER_PAGE);
+    if (credits.length !== newCredits.length) {
+      setCredits(newCredits);
+    }
+    const newHasMore = allCredits.length > page * ITEMS_PER_PAGE;
+    if (hasMore !== newHasMore) {
+      setHasMore(newHasMore);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, allCredits]);
 
   if (loading) {
     return (

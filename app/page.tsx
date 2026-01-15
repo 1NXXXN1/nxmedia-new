@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { fetchTopFilms, fetchTopSeries } from '@/lib/client-api';
 import FilmCard from '@/components/FilmCard';
@@ -62,43 +63,29 @@ function normalizeType(type?: string, genres?: any[]): string {
 }
 
 export default function Home() {
-  const [films, setFilms] = useState<Film[]>([]);
-  const [series, setSeries] = useState<Film[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [filmsRes, seriesRes] = await Promise.allSettled([
-          fetchTopFilms(),
-          fetchTopSeries()
-        ]);
+  const { data: filmsData, isLoading: filmsLoading } = useQuery({
+    queryKey: ['top-films'],
+    queryFn: fetchTopFilms,
+    staleTime: 1000 * 60 * 10, // 10 minut cache
+  });
 
-        if (filmsRes.status === 'fulfilled') {
-          const filmsData = (filmsRes.value?.items || []).map((f: any) => ({
-            ...f,
-            type: normalizeType(f.type, f.genres)
-          }));
-          setFilms(filmsData);
-        }
+  const { data: seriesData, isLoading: seriesLoading } = useQuery({
+    queryKey: ['top-series'],
+    queryFn: fetchTopSeries,
+    staleTime: 1000 * 60 * 10,
+  });
 
-        if (seriesRes.status === 'fulfilled') {
-          const seriesData = (seriesRes.value?.items || []).map((s: any) => ({
-            ...s,
-            type: normalizeType(s.type, s.genres) || 'series'
-          }));
-          setSeries(seriesData);
-        }
-      } catch (e) {
-        console.error('Error loading data:', e);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
-  }, []);
+  const loading = filmsLoading || seriesLoading;
+  const films = (filmsData?.items || []).map((f: any) => ({
+    ...f,
+    type: normalizeType(f.type, f.genres)
+  }));
+  const series = (seriesData?.items || []).map((s: any) => ({
+    ...s,
+    type: normalizeType(s.type, s.genres) || 'series'
+  }));
 
   const FilmCardWithFavorite = ({ film, idx }: { film: Film; idx: number }) => {
     const [isFav, setIsFav] = useState(false);

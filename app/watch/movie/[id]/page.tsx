@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { fetchFilmDetails, fetchFilmStaff, getKinopoiskIdFromTmdb } from '@/lib/client-api';
@@ -40,73 +41,55 @@ interface Actor {
   description?: string;
 }
 
+
+
 export default function WatchMoviePage() {
   const params = useParams();
   const id = params.id as string;
-  const [film, setFilm] = useState<FilmDetail | null>(null);
-  const [actors, setActors] = useState<Actor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isFav, setIsFav] = useState(false);
-  const [kinopoiskId, setKinopoiskId] = useState<string>('');
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [playerError, setPlayerError] = useState<string>('');
   const { user } = useAuth();
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [isFav, setIsFav] = useState(false);
 
-  const checkFavorite = (filmId: string) => {
-    const favStatus = isLocalFavorite(filmId, 'movie');
-    setIsFav(favStatus);
-  };
+  // React Query: fetch film details
+  const { data: film, isLoading: filmLoading } = useQuery({
+    queryKey: ['movie-details', id],
+    queryFn: () => fetchFilmDetails(Number(id), 'movie'),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10,
+  });
 
+  // React Query: fetch kinopoiskId
+  const { data: kpResult } = useQuery({
+    queryKey: ['kinopoisk-id-movie', id],
+    queryFn: () => getKinopoiskIdFromTmdb(Number(id), 'movie'),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // React Query: fetch staff (actors)
+  const { data: staffData } = useQuery({
+    queryKey: ['movie-staff', id],
+    queryFn: () => fetchFilmStaff(Number(id), 'movie'),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Derived values
+  const loading = filmLoading;
+  const kinopoiskId = kpResult?.id;
+  const actors = staffData?.items ? staffData.items.filter((person: any) => person.professionKey === 'ACTOR').slice(0, 10) : [];
+  const playerError = (!kinopoiskId || kinopoiskId === String(id)) ? 'Видеоплеер временно недоступен для этого контента' : '';
+
+  // Check favorite from localStorage
   useEffect(() => {
-    async function loadFilmAndActors() {
-      setLoading(true);
-      try {
-        // Fetch all data in parallel
-        const [tmdbData, kpResult, staffData] = await Promise.all([
-          fetchFilmDetails(Number(id), 'movie'),
-          getKinopoiskIdFromTmdb(Number(id), 'movie'),
-          fetchFilmStaff(Number(id), 'movie'),
-        ]);
-
-        if (!tmdbData) {
-          setLoading(false);
-          return;
-        }
-        setFilm(tmdbData);
-
-        if (kpResult?.id && kpResult.id !== String(id)) {
-          setKinopoiskId(kpResult.id);
-          setPlayerError('');
-        } else {
-          setPlayerError('Видеоплеер временно недоступен для этого контента');
-        }
-
-        if (staffData?.items) {
-          const actorsList = staffData.items.filter((person: any) => person.professionKey === 'ACTOR').slice(0, 10);
-          setActors(actorsList || []);
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('[Watch Movie] Error loading movie:', e);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (id) {
-      setKinopoiskId('');
-      setIframeLoaded(false);
-      setPlayerError('');
-      setLoading(true);
-      loadFilmAndActors();
-      checkFavorite(id);
-
-      const handleStorageChange = () => {
-        checkFavorite(id);
-      };
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
+    setIsFav(isLocalFavorite(id, 'movie'));
+    const handleStorageChange = () => {
+      setIsFav(isLocalFavorite(id, 'movie'));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [id]);
 
   // Load iframe with obfuscated URL
@@ -114,36 +97,32 @@ export default function WatchMoviePage() {
     if (!user || !kinopoiskId || loading || !film) {
       return;
     }
-    
-    //console.log(`[Watch Movie] Creating iframe for Kinopoisk ID: ${kinopoiskId}`);
-    
     const container = document.getElementById('player-container');
     if (!container) {
       return;
     }
-    
     const existingIframe = container.querySelector('iframe');
     if (existingIframe) {
       existingIframe.remove();
     }
-    
     const frame = document.createElement('iframe');
     frame.src = `/api/proxy?id=${kinopoiskId}`;
     frame.className = 'absolute inset-0 w-full h-full border-0';
     frame.allowFullscreen = true;
     frame.allow = 'autoplay *; encrypted-media *';
     frame.referrerPolicy = 'no-referrer';
-    
     frame.onload = () => {
-      //console.log('[Watch Movie] Iframe loaded successfully');
       setIframeLoaded(true);
     };
-    
     frame.onerror = (e) => {
-      //console.error('[Watch Movie] Iframe load error:', e);
+      // Optionally handle error
     };
-    
     container.appendChild(frame);
+    // Cleanup
+    return () => {
+      const iframe = container.querySelector('iframe');
+      if (iframe) iframe.remove();
+    };
   }, [kinopoiskId, loading, film, user]);
 
   const toggleFavorite = (e?: React.MouseEvent) => {
@@ -152,8 +131,6 @@ export default function WatchMoviePage() {
       e.stopPropagation();
     }
     if (!film) return;
-
-    // Darhol localStorage ni yangilaymiz
     if (isFav) {
       removeLocalFavorite(id, 'movie');
       setIsFav(false);
@@ -166,19 +143,17 @@ export default function WatchMoviePage() {
         rating: film.ratingKinopoisk,
         imdbRating: film.ratingImdb,
         year: film.year,
-        type: 'film'
+        type: 'film',
       };
       addLocalFavorite(newFavorite);
       setIsFav(true);
     }
-    
-    // Background da sync bo'ladi avtomatik
   };
+
 
   if (loading) {
     return <div className="text-center py-12 text-gray-400">Загрузка...</div>;
   }
-
   if (!film) {
     return <div className="text-center py-12 text-gray-400">Фильм не найден</div>;
   }
