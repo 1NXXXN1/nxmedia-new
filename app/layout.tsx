@@ -60,23 +60,6 @@ export default function RootLayout({
             `,
           }}
         />
-
-        {/* Mobil grid va posterlar uchun global style */}
-        <style>{`
-          @media (max-width: 768px) {
-            .film-grid {
-              display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 0.5rem;
-            }
-            .film-card {
-              max-width: 140px;
-              width: 100%;
-              margin-left: auto;
-              margin-right: auto;
-            }
-          }
-        `}</style>
       </head>
 
       <body className="relative overflow-x-hidden bg-[#0b0b0f] text-white flex flex-col min-h-screen">

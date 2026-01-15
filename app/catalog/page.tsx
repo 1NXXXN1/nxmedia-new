@@ -291,7 +291,7 @@ function CatalogContent() {
             {Array.from({ length: Math.ceil(films.length / 14) }).map((_, gridIdx) => {
               const posters = films.slice(gridIdx * 14, gridIdx * 14 + 14);
               return (
-                <div key={gridIdx} className="grid grid-cols-2 md:grid-cols-7 gap-4 mb-8">
+                <div key={gridIdx} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4 md:gap-6 mb-8">
                   {posters.map((film, i) => {
                     const filmId = String(film.tmdbId || film.filmId || film.kinopoiskId);
                     const mediaType = (film as any).mediaType || (film.type === 'series' ? 'tv' : 'movie');

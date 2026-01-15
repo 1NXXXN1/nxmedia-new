@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get('id');
   
-  console.log(`[Proxy API] Request received with id: ${id}`);
+  //console.log(`[Proxy API] Request received with id: ${id}`);
   
   if (!id) {
     console.error('[Proxy API] No ID provided');
@@ -13,14 +13,14 @@ export async function GET(request: NextRequest) {
   const urlTemplate = process.env.PLAYER_URL_TEMPLATE;
   
   if (!urlTemplate) {
-    console.error('[Proxy API] PLAYER_URL_TEMPLATE not configured in environment');
+    //console.error('[Proxy API] PLAYER_URL_TEMPLATE not configured in environment');
     return new NextResponse('Configuration error', { status: 500 });
   }
 
   // Replace {ID} placeholder with actual kinopoisk ID
   const fullUrl = urlTemplate.replace('{ID}', id);
   
-  console.log(`[Proxy API] Generated player URL template (first 30 chars): ${fullUrl.substring(0, 30)}...`);
+  //console.log(`[Proxy API] Generated player URL template (first 30 chars): ${fullUrl.substring(0, 30)}...`);
 
   // Return HTML that loads the player in an iframe
   const html = `<!DOCTYPE html>

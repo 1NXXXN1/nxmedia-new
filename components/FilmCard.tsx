@@ -36,12 +36,12 @@ export default function FilmCard({
   const mediaTypeResolved = mediaType || (type === 'series' ? 'tv' : 'movie');
   const watchUrl = `/watch/${mediaTypeResolved === 'tv' ? 'series' : 'movie'}/${id}`;
 
-	return (
-		<motion.div
-			className="group cursor-pointer relative"
-		>
-			<Link href={watchUrl as any} className="block">
-				<div className="aspect-[2/3] relative bg-gray-800 rounded-lg overflow-hidden shadow-lg w-48 h-72">
+   return (
+     <motion.div
+       className="group cursor-pointer relative flex flex-col h-full"
+     >
+       <Link href={watchUrl as any} className="block h-full">
+         <div className="aspect-[2/3] relative bg-gray-800 rounded-lg overflow-hidden shadow-lg w-full h-auto min-h-[180px] flex items-center justify-center">
 					{poster ? (
 						<Image
 							src={poster}
@@ -49,7 +49,7 @@ export default function FilmCard({
 							fill
 							sizes="(max-width: 640px) 80vw, 192px"
 							priority={priority}
-							className="object-cover group-hover:scale-110 transition-transform duration-300 w-full h-full"
+                 className="object-cover group-hover:scale-110 transition-transform duration-300 w-full h-full"
 						/>
 					) : (
 						<div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900 flex flex-col items-center justify-center">
@@ -101,12 +101,12 @@ export default function FilmCard({
 
         {/* Title and Year */}
         <div className="mt-2 px-1">
-          <p className="text-sm font-semibold line-clamp-2 group-hover:text-blue-400 transition-colors">
-            {title}
-          </p>
-          {year && (
-            <p className="text-xs text-gray-400 mt-0.5">{year}</p>
-          )}
+           <p className="text-sm font-semibold line-clamp-2 group-hover:text-blue-400 transition-colors">
+             {title}
+           </p>
+           {year && (
+             <p className="text-xs text-gray-400 mt-0.5">{year}</p>
+           )}
         </div>
       </Link>
     </motion.div>

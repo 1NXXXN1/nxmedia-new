@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 
   // Random key tanlash - load balancing uchun
   const shuffledKeys = [...KEYS].sort(() => Math.random() - 0.5);
-  console.log(`[KP API] Total keys: ${KEYS.length}, Using order: ${shuffledKeys.map(k => k.substring(0, 8)).join(', ')}`);
+  //console.log(`[KP API] Total keys: ${KEYS.length}, Using order: ${shuffledKeys.map(k => k.substring(0, 8)).join(', ')}`);
 
   let lastError = null;
   let quotaExceeded = false;
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
       });
 
       if (res.ok) {
-        console.log(`[KP API] ✅ Success with key: ${key.substring(0, 8)}...`);
+        //console.log(`[KP API] ✅ Success with key: ${key.substring(0, 8)}...`);
         const data = await res.json();
         
         // Agar film ma'lumoti bo'lsa, type'ni normalizatsiya qilamiz
@@ -80,17 +80,17 @@ export async function GET(req: Request) {
       if (res.status === 402 || res.status === 429) {
         quotaExceeded = true;
         lastError = await res.text();
-        console.log(`[KP API] ⚠️  Quota exceeded on key: ${key.substring(0, 8)}...`);
+        //console.log(`[KP API] ⚠️  Quota exceeded on key: ${key.substring(0, 8)}...`);
         break; // Don't try other keys, quota is account-wide
       }
 
       // agar noto'g'ri endpoint bo'lsa → keyingi kalitga o'tmaymiz
       if (res.status === 404) {
-        console.log(`[KP API] 404 Not Found - endpoint yoki key muammo: ${key.substring(0, 8)}...`);
+        //console.log(`[KP API] 404 Not Found - endpoint yoki key muammo: ${key.substring(0, 8)}...`);
         break;
       }
 
-      console.log(`[KP API] ❌ Key failed (${res.status}): ${key.substring(0, 8)}...`);
+      //console.log(`[KP API] ❌ Key failed (${res.status}): ${key.substring(0, 8)}...`);
       lastError = await res.text();
 
     } catch (e) {

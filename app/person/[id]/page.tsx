@@ -200,7 +200,7 @@ export default function PersonPage() {
       {credits.length > 0 && (
         <div className="max-w-6xl mx-auto space-y-4">
           <h2 className="text-2xl font-bold">Фильмография</h2>
-          <div className="film-grid grid-cols-2 md:grid-cols-7 gap-4 items-start min-h-0">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
             {credits.map((credit) => {
               const mediaType = credit.media_type === 'tv' ? 'series' : 'movie';
               const watchUrl = `/watch/${mediaType}/${credit.id}`;
@@ -212,7 +212,7 @@ export default function PersonPage() {
               >
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  className="group cursor-pointer film-card flex flex-col"
+                  className="group cursor-pointer"
                 >
                   <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-800 mb-2">
                     {credit.poster_path ? (
