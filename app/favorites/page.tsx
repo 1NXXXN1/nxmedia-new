@@ -33,7 +33,6 @@ function FavoritesContent() {
         setMounted(true);
         return;
       }
-      
       // User bor bo'lsa, localStorage dan o'qiymiz
       const localFavs = getLocalFavorites();
       setFavorites(localFavs);
@@ -41,27 +40,32 @@ function FavoritesContent() {
     };
 
     loadFavorites();
-    
+
     // Custom event tinglaymiz
     const handleFavoritesChanged = () => {
       loadFavorites();
     };
-    
     window.addEventListener('favoritesChanged', handleFavoritesChanged);
-    
+
     // Storage event listener - boshqa tabda localStorage o'zgarganda
     const handleStorageChange = () => {
       const localFavs = getLocalFavorites();
       setFavorites(localFavs);
     };
-    
     window.addEventListener('storage', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('favoritesChanged', handleFavoritesChanged);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [user]);
+
+  // Redirect to main page if user logs out
+  useEffect(() => {
+    if (mounted && !user) {
+      window.location.replace('/');
+    }
+  }, [mounted, user]);
 
   if (!mounted) return null;
 
