@@ -31,7 +31,7 @@ interface Credit {
 export default function PersonPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const id = params?.id as string | undefined;
   const TMDB_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
   const ITEMS_PER_PAGE = 21;
 
@@ -81,8 +81,18 @@ export default function PersonPage() {
             uniqueMap.set(key, c);
           }
         });
+        // Exclude unwanted genres/types (talk shows, reality, etc.) and only allow Russian-titled movies/series/cartoons
+        const unwantedGenres = [10767, 10770, 10764, 10763, 10766, 99, 10402]; // talk show, news, reality, documentary, soap, music
         const sorted = Array.from(uniqueMap.values())
           .filter((c: any) => c.media_type === 'movie' || c.media_type === 'tv')
+          .filter((c: any) => {
+            // Only allow if Russian title or name is present and in Cyrillic
+            const ruTitle = c.title || c.name;
+            if (!ruTitle || !/[\u0400-\u04FF]/.test(ruTitle)) return false;
+            // Exclude unwanted genres
+            if (Array.isArray(c.genre_ids) && c.genre_ids.some((gid: number) => unwantedGenres.includes(gid))) return false;
+            return true;
+          })
           .filter((c: any) => (c.vote_average || 0) >= 6.0)
           .sort((a: any, b: any) => {
             const popA = a.popularity || 0;

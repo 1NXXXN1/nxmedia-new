@@ -47,9 +47,24 @@ interface Actor {
 
 export default function WatchSeriesPage() {
   const { user } = useAuth();
-  const { id } = useParams();
+  const { id } = useParams() as { id: string };
   const [isFav, setIsFav] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+
+  // Sync isFav with localStorage and favorites changes
+  useEffect(() => {
+    if (!id) return;
+    setIsFav(isLocalFavorite(String(id), 'tv'));
+    const handleStorageChange = () => {
+      setIsFav(isLocalFavorite(String(id), 'tv'));
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('favoritesChanged', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('favoritesChanged', handleStorageChange);
+    };
+  }, [id]);
 
   const { data: film, isLoading: filmLoading } = useQuery({
     queryKey: ['series-details', id],
@@ -138,6 +153,8 @@ export default function WatchSeriesPage() {
   if (!film) {
     return <div className="text-center py-12 text-gray-400">Сериал не найден</div>;
   }
+
+
 
   return (
     <div className="space-y-6 pt-[25px] md:pt-0">
@@ -286,9 +303,13 @@ export default function WatchSeriesPage() {
               </svg>
               <div className="text-white text-xl font-semibold">Войдите с учётной записью</div>
               <div className="text-gray-400 text-sm max-w-md">Для просмотра контента необходимо авторизоваться</div>
-              <Link href="/login" className="mt-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
+              <button
+                type="button"
+                className="mt-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+                onClick={() => window.dispatchEvent(new CustomEvent('openLoginRegisterModal', { detail: { mode: 'login' } }))}
+              >
                 Войти
-              </Link>
+              </button>
             </div>
           ) : playerError ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">

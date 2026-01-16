@@ -7,7 +7,7 @@ import { supabase } from './supabase';
 import { FAVORITES_KEY } from './constants';
 
 const SYNC_QUEUE_KEY = 'favorites_sync_queue';
-const SYNC_DELAY = 3000; // 3 soniya kutib sync qiladi
+const SYNC_DELAY = 1000; // 1 soniya kutib sync qiladi
 
 let syncTimeout: NodeJS.Timeout | null = null;
 
@@ -162,6 +162,7 @@ export async function syncToSupabase(): Promise<void> {
     
     //console.log(`[Sync] Starting sync of ${queue.length} operations...`);
     
+    let allSuccess = true;
     for (const operation of queue) {
       try {
         if (operation.action === 'add') {
@@ -181,9 +182,9 @@ export async function syncToSupabase(): Promise<void> {
             }], {
               onConflict: 'user_id,film_id,media_type'
             });
-          
           if (error) {
             console.error('[Sync] Error adding favorite:', error);
+            allSuccess = false;
           }
         } else if (operation.action === 'remove') {
           // Remove from Supabase
@@ -193,23 +194,21 @@ export async function syncToSupabase(): Promise<void> {
             .eq('user_id', user.id)
             .eq('film_id', operation.filmId)
             .eq('media_type', operation.mediaType);
-          
           if (error) {
             console.error('[Sync] Error removing favorite:', error);
+            allSuccess = false;
           }
         }
       } catch (err) {
         console.error('[Sync] Error processing operation:', err);
+        allSuccess = false;
       }
     }
-    
-    // Queue ni tozalaymiz
-    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify([]));
-    //console.log('[Sync] Sync completed successfully');
-    
-    // Sync muvaffaqiyatli bo'lgandan keyin queue ni tozalaymiz
-    localStorage.removeItem(SYNC_QUEUE_KEY);
-    //console.log('[Sync] Cleared sync queue from localStorage');
+    // Faqat hammasi muvaffaqiyatli bo'lsa, queue ni tozalaymiz
+    if (allSuccess) {
+      localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify([]));
+      localStorage.removeItem(SYNC_QUEUE_KEY);
+    }
   } catch (err) {
     console.error('[Sync] Sync failed:', err);
   }

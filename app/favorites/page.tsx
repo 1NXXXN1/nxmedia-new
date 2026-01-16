@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import FilmCard from '@/components/FilmCard';
+import ShimmerGrid from '@/components/ShimmerGrid';
 import { useAuth } from '@/lib/auth-context';
 import { getLocalFavorites, removeLocalFavorite } from '@/lib/favorites-sync';
 
@@ -21,6 +22,7 @@ interface Media {
 function FavoritesContent() {
   const [favorites, setFavorites] = useState<Media[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'film' | 'series' | 'cartoon'>('all');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -70,13 +72,30 @@ function FavoritesContent() {
     setFavorites(favorites.filter((f) => f.id !== id));
   };
 
+  // ...existing code...
+
+  const getType = (media: Media) => {
+    const mt = (media as any).mediaType || media.type;
+    if (mt === 'movie' || mt === 'film') return 'film';
+    if (mt === 'tv' || mt === 'series') return 'series';
+    if (mt === 'cartoon' || mt === 'anime' || mt === 'multfilm') return 'cartoon';
+    return 'film';
+  };
+
+  const filteredFavorites = filter === 'all'
+    ? favorites
+    : favorites.filter((media) => getType(media) === filter);
+
   if (favorites.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-400 mb-4">Нет избранных</p>
-        <Link href="/" className="text-blue-400 hover:text-blue-300">
-          Обзор фильмов
-        </Link>
+      <div>
+        <ShimmerGrid />
+        <div className="text-center py-12">
+          <p className="text-gray-400 mb-4">Нет избранных</p>
+          <Link href="/" className="text-blue-400 hover:text-blue-300">
+            Обзор фильмов
+          </Link>
+        </div>
       </div>
     );
   }
@@ -87,18 +106,39 @@ function FavoritesContent() {
         <h1 className="text-3xl font-bold">Избранное</h1>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-7 md:grid-rows-2 gap-4">
-        {favorites.slice(0, 14).map((media, i) => (
-          <div key={`${media.id}-${i}`} className="relative group">
+      <div className="flex gap-2 mb-4">
+        <button
+          className={`px-4 py-2 rounded-lg font-medium border ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 border-gray-700'}`}
+          onClick={() => setFilter('all')}
+        >Все</button>
+        <button
+          className={`px-4 py-2 rounded-lg font-medium border ${filter === 'film' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 border-gray-700'}`}
+          onClick={() => setFilter('film')}
+        >Фильмы</button>
+        <button
+          className={`px-4 py-2 rounded-lg font-medium border ${filter === 'series' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 border-gray-700'}`}
+          onClick={() => setFilter('series')}
+        >Сериалы</button>
+        <button
+          className={`px-4 py-2 rounded-lg font-medium border ${filter === 'cartoon' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 border-gray-700'}`}
+          onClick={() => setFilter('cartoon')}
+        >Мультфильмы</button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+        {filteredFavorites.map((media, i) => (
+          <div key={`${media.id}-${i}`} className="relative group h-full w-full flex flex-col">
             <FilmCard
               id={media.id}
               title={media.title}
-              poster={media.poster}
+              poster={media.poster ?? undefined}
               year={media.year}
-              ratingKinopoisk={media.rating}
-              ratingImdb={media.imdbRating}
+              ratingKinopoisk={media.rating ?? undefined}
+              ratingImdb={media.imdbRating ?? undefined}
               mediaType={(media as any).mediaType || 'movie'}
               priority={i < 6}
+              showFavoriteButton={true}
+              isFavorite={true}
             />
             <button
               onClick={(e) => {
@@ -115,9 +155,6 @@ function FavoritesContent() {
             </button>
           </div>
         ))}
-        {Array.from({ length: 14 - favorites.slice(0, 14).length }).map((_, idx) => (
-          <div key={`empty-fav-${idx}`} />
-        ))}
       </div>
     </div>
   );
@@ -125,7 +162,14 @@ function FavoritesContent() {
 
 export default function FavoritesPage() {
   return (
-    <Suspense fallback={<div className="text-center py-12 text-gray-400">Загрузка...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-blue-500 mb-4" />
+          <div className="text-gray-400">Загрузка...</div>
+        </div>
+      }
+    >
       <FavoritesContent />
     </Suspense>
   );

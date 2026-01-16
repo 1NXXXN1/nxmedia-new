@@ -84,9 +84,21 @@ export async function fetchTopFilms(){
     const r = await fetch(`${TMDB_BASE}/movie/popular?api_key=${TMDB_KEY}&language=ru-RU`, { cache: 'no-store' });
     if (!r.ok) return { items: [] };
     const { results = [] } = await r.json();
-    // Filter out Indian movies and movies with rating below 50% (5.0 on TMDB scale)
+    // Exclude Indian movies, low-rated, and unwanted genres/types
     const indianLanguages = ['hi', 'ta', 'te', 'ml', 'kn', 'bn', 'mr', 'pa'];
-    const filtered = results.filter((t: any) => !indianLanguages.includes(t.original_language) && (t.vote_average || 0) > 5.0);
+    // TMDB genre IDs for unwanted types
+    const unwantedGenres = [10767, 10770, 10764, 10763, 10766, 99, 10402]; // talk show, news, reality, documentary, soap, music
+    const filtered = results.filter((t: any) => {
+      // Exclude by language
+      if (indianLanguages.includes(t.original_language)) return false;
+      // Exclude by rating
+      if ((t.vote_average || 0) <= 5.0) return false;
+      // Exclude if no Russian title or not in Cyrillic
+      if (!t.title || !/[\u0400-\u04FF]/.test(t.title)) return false;
+      // Exclude unwanted genres
+      if (Array.isArray(t.genre_ids) && t.genre_ids.some((gid: number) => unwantedGenres.includes(gid))) return false;
+      return true;
+    });
     return { items: filtered.slice(0, 14).map((t: any) => mapTmdbItem(t, 'movie')) };
   } catch (e) {
     console.error('TMDB top films error:', e);
@@ -100,9 +112,16 @@ export async function fetchTopSeries(){
     const r = await fetch(`${TMDB_BASE}/tv/popular?api_key=${TMDB_KEY}&language=ru-RU`, { cache: 'no-store' });
     if (!r.ok) return { items: [] };
     const { results = [] } = await r.json();
-    // Filter out Indian series and series with rating below 50% (5.0 on TMDB scale)
+    // Exclude Indian series, low-rated, and unwanted genres/types
     const indianLanguages = ['hi', 'ta', 'te', 'ml', 'kn', 'bn', 'mr', 'pa'];
-    const filtered = results.filter((t: any) => !indianLanguages.includes(t.original_language) && (t.vote_average || 0) > 5.0);
+    const unwantedGenres = [10767, 10770, 10764, 10763, 10766, 99, 10402]; // talk show, news, reality, documentary, soap, music
+    const filtered = results.filter((t: any) => {
+      if (indianLanguages.includes(t.original_language)) return false;
+      if ((t.vote_average || 0) <= 5.0) return false;
+      if (!t.name || !/[\u0400-\u04FF]/.test(t.name)) return false;
+      if (Array.isArray(t.genre_ids) && t.genre_ids.some((gid: number) => unwantedGenres.includes(gid))) return false;
+      return true;
+    });
     return { items: filtered.map((t: any) => mapTmdbItem(t, 'tv')) };
   } catch (e) {
     console.error('TMDB top series error:', e);
@@ -116,10 +135,20 @@ export async function searchKinopoisk(keyword: string, page = 1, limit = 14){
     const r = await fetch(`${TMDB_BASE}/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(keyword)}&page=${page}&language=ru-RU`, { cache: 'no-store' });
     if (!r.ok) return { items: [] };
     const { results = [] } = await r.json();
-    // Show content with posters
+    // Show only Russian-localized content with posters, exclude unwanted genres/types
+    const unwantedGenres = [10767, 10770, 10764, 10763, 10766, 99, 10402];
     return {
       items: results
-        .filter((t: any) => t.media_type !== 'person' && t.poster_path)
+        .filter((t: any) => {
+          if (t.media_type === 'person') return false;
+          if (!t.poster_path) return false;
+          // Only allow if Russian title or name is present and in Cyrillic
+          const ruTitle = t.title || t.name;
+          if (!ruTitle || !/[\u0400-\u04FF]/.test(ruTitle)) return false;
+          // Exclude unwanted genres
+          if (Array.isArray(t.genre_ids) && t.genre_ids.some((gid: number) => unwantedGenres.includes(gid))) return false;
+          return true;
+        })
         .slice(0, limit)
         .map((t: any) => ({
           kinopoiskId: t.id,
@@ -214,7 +243,13 @@ export async function searchFilmsByFilters(params: {
     const data = await r.json();
     return {
       items: (data.results || [])
-        .filter((t: any) => t.poster_path)
+        .filter((t: any) => {
+          if (!t.poster_path) return false;
+          // Only allow if Russian title or name is present and in Cyrillic
+          const ruTitle = t.title || t.name;
+          if (!ruTitle || !/[\u0400-\u04FF]/.test(ruTitle)) return false;
+          return true;
+        })
         .map((t: any) => ({
           kinopoiskId: t.id,
           filmId: t.id,

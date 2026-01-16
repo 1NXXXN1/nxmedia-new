@@ -6,6 +6,7 @@ import Logo from '@/components/Logo';
 import VisitorCounter from '@/components/VisitorCounter';
 import ScrollToTop from '@/components/ScrollToTop';
 import ClientProviders, { UserMenu, FavoritesLink } from '@/components/ClientProviders';
+import LoginRegisterModalRoot from '@/components/LoginRegisterModalRoot';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,7 @@ export const metadata = {
     icon: '/favicon.svg',
   },
 };
+
 
 export default function RootLayout({
   children,
@@ -64,7 +66,7 @@ export default function RootLayout({
 
       <body className="relative overflow-x-hidden bg-[#0b0b0f] text-white flex flex-col min-h-screen">
         <ClientProviders>
-
+          <LoginRegisterModalRoot />
           {/* Background */}
           <div className="fixed inset-0 -z-10 overflow-hidden">
             <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-slow-float-1" />

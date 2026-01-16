@@ -28,11 +28,12 @@ interface SearchResult {
 
 export default function SearchPageClient() {
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const FILMS_PER_PAGE = 14;
+  const query = searchParams?.get('q') || '';
+  // No per-page limit, show all results
   const [results, setResults] = useState<SearchResult[]>([]);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [favoritesState, setFavoritesState] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
 
@@ -50,25 +51,43 @@ export default function SearchPageClient() {
   useEffect(() => {
     if (!query) {
       setResults([]);
-      setLoading(false);
+      setHasMore(false);
       return;
     }
 
     async function search() {
       setLoading(true);
       try {
-        const data = await searchKinopoisk(query, page, FILMS_PER_PAGE);
+        const data = await searchKinopoisk(query, 1, 14);
         setResults(data.items || []);
+        setHasMore((data.items?.length || 0) === 14);
+        setPage(1);
       } catch (e) {
         console.error('Search error:', e);
         setResults([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     }
-
     search();
-  }, [query, page]);
+  }, [query]);
+
+  const handleLoadMore = async () => {
+    setLoading(true);
+    try {
+      const nextPage = page + 1;
+      const data = await searchKinopoisk(query, nextPage, 14);
+      setResults(prev => [...prev, ...(data.items || [])]);
+      setPage(nextPage);
+      setHasMore((data.items?.length || 0) === 14);
+    } catch (e) {
+      console.error('Search error:', e);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     updateFavoritesState();
@@ -101,15 +120,13 @@ export default function SearchPageClient() {
         <p className="text-center text-gray-400">Результатов не найдено</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-7 md:grid-rows-2 gap-4 mb-8">
-            {results.filter(film => film.kinopoiskId).slice(0, 14).map((film, i) => {
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4 mb-8">
+            {results.filter(film => film.kinopoiskId).map((film, i) => {
               const mediaType = (film as any).mediaType || (film.type === 'series' ? 'tv' : 'movie');
               const filmId = String(film.kinopoiskId);
-              
               const handleFavoriteClick = (e: React.MouseEvent) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
                 const isFav = isLocalFavorite(filmId, mediaType);
                 if (isFav) {
                   removeLocalFavorite(filmId, mediaType);
@@ -127,7 +144,6 @@ export default function SearchPageClient() {
                 }
                 updateFavoritesState();
               };
-              
               return (
                 <FilmCard
                   key={`${film.kinopoiskId}-${i}-${favoritesState[filmId]}`}
@@ -145,28 +161,18 @@ export default function SearchPageClient() {
                 />
               );
             })}
-            {Array.from({ length: 14 - results.filter(film => film.kinopoiskId).slice(0, 14).length }).map((_, idx) => (
-              <div key={`empty-search-${idx}`} />
-            ))}
           </div>
-
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-              className="px-4 py-2 bg-gray-800 text-white rounded disabled:opacity-50"
-            >
-              Назад
-            </button>
-            <span className="px-4 py-2 text-gray-400">{page}</span>
-            <button
-              onClick={() => setPage(page + 1)}
-              disabled={results.length === 0}
-              className="px-4 py-2 bg-gray-800 text-white rounded disabled:opacity-50"
-            >
-              Далее
-            </button>
-          </div>
+          {hasMore && (
+            <div className="flex justify-center mb-12">
+              <button
+                onClick={handleLoadMore}
+                disabled={loading}
+                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Загрузка...' : 'Показать ещё'}
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -7,7 +7,7 @@
  * Uses TMDB API for all metadata, Kinopoisk ID for player iframe only.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ import { fetchFilmDetails, fetchFilmStaff, getKinopoiskIdFromTmdb } from '@/lib/
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import { addLocalFavorite, removeLocalFavorite, isLocalFavorite } from '@/lib/favorites-sync';
+
 
 interface FilmDetail {
   kinopoiskId: number | string;
@@ -44,8 +45,13 @@ interface Actor {
 
 
 export default function WatchMoviePage() {
+  // --- Video Progress State ---
+  const progressRef = useRef<number>(0);
+  const lastSaveRef = useRef<number>(0);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const restoredRef = useRef(false);
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
   const { user } = useAuth();
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [isFav, setIsFav] = useState(false);
@@ -94,36 +100,30 @@ export default function WatchMoviePage() {
 
   // Load iframe with obfuscated URL
   useEffect(() => {
-    if (!user || !kinopoiskId || loading || !film) {
-      return;
-    }
+    if (!user || !kinopoiskId || loading || !film) return;
     const container = document.getElementById('player-container');
-    if (!container) {
-      return;
-    }
+    if (!container) return;
+
+    // Remove existing iframe before creating a new one
     const existingIframe = container.querySelector('iframe');
-    if (existingIframe) {
-      existingIframe.remove();
-    }
+    if (existingIframe) existingIframe.remove();
+
     const frame = document.createElement('iframe');
     frame.src = `/api/proxy?id=${kinopoiskId}`;
     frame.className = 'absolute inset-0 w-full h-full border-0';
     frame.allowFullscreen = true;
     frame.allow = 'autoplay *; encrypted-media *';
     frame.referrerPolicy = 'no-referrer';
-    frame.onload = () => {
-      setIframeLoaded(true);
-    };
-    frame.onerror = (e) => {
-      // Optionally handle error
-    };
+    iframeRef.current = frame;
+    frame.onload = () => setIframeLoaded(true);
+    frame.onerror = () => {};
     container.appendChild(frame);
-    // Cleanup
+
     return () => {
-      const iframe = container.querySelector('iframe');
-      if (iframe) iframe.remove();
+      const oldIframe = container.querySelector('iframe');
+      if (oldIframe) oldIframe.remove();
     };
-  }, [kinopoiskId, loading, film, user]);
+  }, [kinopoiskId, user, loading, film]);
 
   const toggleFavorite = (e?: React.MouseEvent) => {
     if (e) {
@@ -157,6 +157,8 @@ export default function WatchMoviePage() {
   if (!film) {
     return <div className="text-center py-12 text-gray-400">Фильм не найден</div>;
   }
+
+
 
   return (
     <div className="space-y-6 pt-[25px] md:pt-0">
@@ -290,9 +292,13 @@ export default function WatchMoviePage() {
               </svg>
               <div className="text-white text-xl font-semibold">Войдите с учётной записью</div>
               <div className="text-gray-400 text-sm max-w-md">Для просмотра контента необходимо авторизоваться</div>
-              <Link href="/login" className="mt-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition">
+              <button
+                type="button"
+                className="mt-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+                onClick={() => window.dispatchEvent(new CustomEvent('openLoginRegisterModal', { detail: { mode: 'login' } }))}
+              >
                 Войти
-              </Link>
+              </button>
             </div>
           ) : playerError ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">

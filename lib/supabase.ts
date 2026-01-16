@@ -50,13 +50,26 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Only create client if credentials exist
+if (!supabaseUrl || !supabaseAnonKey) {
+  // eslint-disable-next-line no-console
+  console.error('SUPABASE ENV ERROR:', { supabaseUrl, supabaseAnonKey });
+}
+
 export const supabase = supabaseUrl && supabaseAnonKey 
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+
+// if (!supabase) {
+//   // eslint-disable-next-line no-console
+//   console.error('Supabase client is NULL!');
+// } else {
+//   // eslint-disable-next-line no-console
+//   console.log('Supabase client created:', { supabaseUrl });
+// }
 
 export interface Favorite {
   id?: number;
@@ -71,3 +84,6 @@ export interface Favorite {
   type?: string;
   created_at?: string;
 }
+
+// @ts-ignore
+if (typeof window !== 'undefined') window.supabase = supabase;

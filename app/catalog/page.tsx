@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { searchFilmsByFilters } from '@/lib/client-api';
 import FilmCard from '@/components/FilmCard';
+import ShimmerGrid from '@/components/ShimmerGrid';
 import { isLocalFavorite, addLocalFavorite, removeLocalFavorite } from '@/lib/favorites-sync';
 import { useAuth } from '@/lib/auth-context';
 
@@ -40,19 +41,24 @@ function CatalogContent() {
 
   // Get filters from URL or use defaults
   const [filterType, setFilterType] = useState<'all' | 'movies' | 'tv' | 'cartoons'>(
-    (searchParams.get('type') as any) || 'all'
+    (searchParams?.get('type') as any) || 'all'
   );
   const [filterYear, setFilterYear] = useState<number | ''>(
-    searchParams.get('year') ? Number(searchParams.get('year')) : ''
+    searchParams?.get('year') ? Number(searchParams.get('year')) : ''
   );
   const [sortBy, setSortBy] = useState<'rating' | 'year' | 'popularity'>(
-    (searchParams.get('sort') as any) || 'rating'
+    (searchParams?.get('sort') as any) || 'rating'
   );
-  const hasSearched = searchParams.has('searched');
+  const hasSearched = searchParams?.has('searched') ?? false;
 
-  const { data: filmsData, isLoading: loadingQuery } = useQuery({
-    queryKey: ['catalog-films', filterType, filterYear, sortBy, hasSearched],
-    queryFn: async () => {
+  const [loadingQuery, setLoadingQuery] = useState(false);
+
+  // Initial search effect
+  useEffect(() => {
+    if (!hasSearched) return;
+    setLoadingQuery(true);
+    setPage(1);
+    (async () => {
       const [result1, result2] = await Promise.all([
         searchFilmsByFilters({
           type:
@@ -81,21 +87,23 @@ function CatalogContent() {
           page: 2,
         })
       ]);
-      return [...(result1.items || []), ...(result2.items || [])].slice(0, 21);
-    },
-    enabled: hasSearched,
-    staleTime: 1000 * 60 * 10,
-  });
+      const newFilms = [...(result1.items || []), ...(result2.items || [])].slice(0, 21);
+      setFilms(newFilms);
+      setHasMore(newFilms.length >= 21);
+      setLoadingQuery(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType, filterYear, sortBy, hasSearched]);
 
   const updateFavoritesState = useCallback(() => {
     const newState: Record<string, boolean> = {};
-    (filmsData || []).forEach(film => {
+    (localFilms || []).forEach(film => {
       const id = String(film.tmdbId || film.filmId || film.kinopoiskId);
       const mediaType = (film.type === 'series' ? 'tv' : 'movie') as 'movie' | 'tv';
       newState[id] = isLocalFavorite(id, mediaType);
     });
     setFavoritesState(newState);
-  }, [filmsData, user]);
+  }, [localFilms, user]);
 
   // Load films only when filters change (not on initial mount)
   // useEffect(() => {
@@ -277,14 +285,14 @@ function CatalogContent() {
             <p className="text-lg mb-2">📽️ Выбери фильтры и нажми "Искать"</p>
             <p className="text-sm">Пока поиск не запущен, результаты не показываем</p>
           </div>
-        ) : (filmsData?.length === 0 && !loadingQuery) ? (
+        ) : (localFilms?.length === 0 && !loadingQuery) ? (
           <div className="text-center py-12 text-gray-400">
             <p className="text-lg">Фильмы не найдены</p>
           </div>
         ) : (
           <>
-            {Array.from({ length: Math.ceil((filmsData?.length || 0) / 14) }).map((_, gridIdx) => {
-              const posters = (filmsData || []).slice(gridIdx * 14, gridIdx * 14 + 14);
+            {Array.from({ length: Math.ceil((localFilms?.length || 0) / 14) }).map((_, gridIdx) => {
+              const posters = (localFilms || []).slice(gridIdx * 14, gridIdx * 14 + 14);
               return (
                 <div key={gridIdx} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4 md:gap-6 mb-8">
                   {posters.map((film, i) => {
@@ -339,7 +347,7 @@ function CatalogContent() {
                   <div className="w-8 h-8 border-4 border-gray-700 border-t-blue-500 rounded-full"></div>
                 </div>
               </div>
-            ) : hasMore && filmsData && filmsData.length > 0 ? (
+            ) : hasMore && localFilms && localFilms.length > 0 ? (
               <div className="text-center py-8">
                 <button
                   onClick={loadMore}
@@ -355,4 +363,19 @@ function CatalogContent() {
   );
 }
 
-export default CatalogContent;
+import { Suspense } from 'react';
+
+export default function CatalogPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-blue-500 mb-4" />
+          <div className="text-gray-400">Загрузка...</div>
+        </div>
+      }
+    >
+      <CatalogContent />
+    </Suspense>
+  );
+}
